@@ -44,6 +44,11 @@ export REVERB_API_KEY=...   # or storeApiKey() → localStorage in the browser
 - In sold mode the table gains **Ask** and **discount %** columns, computed
   from `original_price` vs `price`.
 - Light/dark theme toggle, defaulting to your OS setting.
+- **Search state lives in the URL** — query, filters, page, sold mode, and
+  table/grid view. Reloading re-runs the search; the link is shareable.
+  `replaceState`, so the back button isn't buried under every filter tweak.
+- **Clear** resets the filters and results but keeps your table/grid choice —
+  that's a display preference, not part of the search.
 
 ## Using the library directly
 
