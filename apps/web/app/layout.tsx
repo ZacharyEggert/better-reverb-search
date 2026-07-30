@@ -10,6 +10,8 @@ const inter = Inter({ subsets: ["latin"], display: "swap" });
 export const metadata: Metadata = {
   title: "Better Reverb Search",
   description: "Search Reverb listings and sold comps with real price stats.",
+  // ponytail: placeholder mark — swap the SVG and re-run rsvg-convert for the PNG.
+  icons: { icon: ["/favicon.svg", "/favicon.png"], apple: "/favicon.png" },
 };
 
 export default function RootLayout({
