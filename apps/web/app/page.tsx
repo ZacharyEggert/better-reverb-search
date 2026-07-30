@@ -1,31 +1,74 @@
 "use client";
 
 import type { SearchQuery } from "@better-reverb-search/reverb-api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiKeyField } from "@/components/api-key-field";
 import { ResultsGrid } from "@/components/results-grid";
 import { ResultsTable } from "@/components/results-table";
 import { SearchForm } from "@/components/search-form";
 import { StatsBar } from "@/components/stats-bar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { fromSearchParams, toSearchParams } from "@/lib/query-url";
 import { useSearch } from "@/lib/use-search";
 
 type View = "table" | "grid";
 
+const DEFAULT_QUERY: SearchQuery = { perPage: 24 };
+
 export default function Page() {
-  const [query, setQuery] = useState<SearchQuery>({ perPage: 24 });
+  const [query, setQuery] = useState<SearchQuery>(DEFAULT_QUERY);
   const [view, setView] = useState<View>("table");
-  const { result, error, loading, run } = useSearch();
+  const { result, error, loading, run, clear } = useSearch();
 
   // The mode the current *results* were fetched in — not the pending toggle
   // state, so the table doesn't render Ask/Off columns against active listings.
   const [resultsAreSold, setResultsAreSold] = useState(false);
 
+  // replaceState, not push: the search box isn't a navigation stack, and this
+  // keeps the URL shareable/reloadable without burying the back button.
+  const syncUrl = (q: SearchQuery, v: View) => {
+    const qs = toSearchParams(q, v);
+    window.history.replaceState(
+      null,
+      "",
+      qs ? `?${qs}` : window.location.pathname,
+    );
+  };
+
+  // Restore from the URL on mount. Runs after hydration so the server-rendered
+  // empty state and the client's first paint agree.
+  useEffect(() => {
+    const { query: q, view: v } = fromSearchParams(window.location.search);
+    if (v === "grid") setView("grid");
+    // perPage/page alone are just defaults left over from a clear — nothing to search.
+    const meaningful = Object.keys(q).some(
+      (k) => k !== "perPage" && k !== "page",
+    );
+    if (!meaningful) return;
+    const next = { ...DEFAULT_QUERY, ...q };
+    setQuery(next);
+    setResultsAreSold(next.showOnlySold === true);
+    void run(next);
+  }, [run]);
+
   const search = (next: SearchQuery = query, page = 1) => {
     const q = { ...next, page };
     setQuery(q);
     setResultsAreSold(q.showOnlySold === true);
+    syncUrl(q, view);
     void run(q);
+  };
+
+  const setViewAndSync = (v: View) => {
+    setView(v);
+    syncUrl(query, v);
+  };
+
+  const clearAll = () => {
+    setQuery(DEFAULT_QUERY);
+    setResultsAreSold(false);
+    clear();
+    syncUrl(DEFAULT_QUERY, view);
   };
 
   const sold = query.showOnlySold === true;
@@ -47,10 +90,18 @@ export default function Page() {
           </Toggle>
           <Toggle
             active={view === "table"}
-            onClick={() => setView(view === "table" ? "grid" : "table")}
+            onClick={() => setViewAndSync(view === "table" ? "grid" : "table")}
           >
             {view === "table" ? "Table" : "Grid"}
           </Toggle>
+          {/* Not a Toggle — it's an action, so no aria-pressed. */}
+          <button
+            type="button"
+            onClick={clearAll}
+            className="rounded-full border border-[var(--color-line)] px-4 py-1.5 text-sm text-[var(--color-muted)]"
+          >
+            Clear
+          </button>
           <ApiKeyField />
           <ThemeToggle />
         </div>

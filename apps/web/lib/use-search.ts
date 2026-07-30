@@ -47,5 +47,10 @@ export function useSearch() {
     }
   }, []);
 
-  return { ...state, run };
+  const clear = useCallback(() => {
+    inFlight.current?.abort();
+    setState({ loading: false });
+  }, []);
+
+  return { ...state, run, clear };
 }
