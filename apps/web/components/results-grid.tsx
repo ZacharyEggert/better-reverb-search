@@ -22,7 +22,7 @@ export function ResultsGrid({
         return (
           <li
             key={l.id}
-            className="overflow-hidden rounded-lg border border-[var(--color-line)]"
+            className="overflow-hidden rounded-[var(--radius-module)] border border-[var(--color-line)] bg-[var(--color-card)]"
           >
             <a
               href={listingUrl(l) ?? "#"}
@@ -51,7 +51,7 @@ export function ResultsGrid({
                     </span>
                   )}
                   {off !== undefined && (
-                    <span className="tnum text-xs text-[var(--color-accent)]">
+                    <span className="tnum text-xs font-medium text-[var(--color-sale)]">
                       −{off}%
                     </span>
                   )}

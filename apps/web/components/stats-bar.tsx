@@ -22,7 +22,7 @@ export function StatsBar({
     }).format(n);
 
   return (
-    <div className="rounded-lg border border-[var(--color-line)] p-4">
+    <div className="rounded-[var(--radius-module)] border border-[var(--color-line)] p-4">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat label={sold ? "Lowest sold" : "Lowest ask"} value={money(stats.min)} />
         <Stat
@@ -56,7 +56,8 @@ function Stat({
     <div>
       <div className="text-xs text-[var(--color-muted)]">{label}</div>
       <div
-        className={`tnum ${emphasis ? "text-2xl font-semibold text-[var(--color-accent)]" : "text-2xl font-medium"}`}
+        // Prices stay ink — on Reverb a warm-red number means "price drop".
+        className={`tnum text-2xl ${emphasis ? "font-bold" : "font-medium"}`}
       >
         {value}
       </div>

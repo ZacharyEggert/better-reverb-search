@@ -53,7 +53,7 @@ export function ResultsTable({
   ];
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-[var(--color-line)]">
+    <div className="overflow-x-auto rounded-[var(--radius-module)] border border-[var(--color-line)]">
       <table className="w-full min-w-3xl text-sm">
         <thead>
           <tr className="border-b border-[var(--color-line)] text-left">
@@ -82,14 +82,14 @@ export function ResultsTable({
             return (
               <tr
                 key={l.id}
-                className="border-b border-[var(--color-line)] last:border-0 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                className="border-b border-[var(--color-line)] last:border-0 hover:bg-[var(--color-overlay-hovered)]"
               >
                 <td className="max-w-md p-2">
                   <a
                     href={listingUrl(l) ?? "#"}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="hover:text-[var(--color-accent)] hover:underline"
+                    className="hover:underline"
                   >
                     {l.title}
                   </a>
@@ -104,7 +104,7 @@ export function ResultsTable({
                   <td className="tnum p-2 text-[var(--color-muted)]">
                     {l.original_price?.display ?? "—"}
                     {off !== undefined && (
-                      <span className="ml-1 text-[var(--color-accent)]">
+                      <span className="ml-1 font-medium text-[var(--color-sale)]">
                         −{off}%
                       </span>
                     )}

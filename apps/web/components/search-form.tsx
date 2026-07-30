@@ -6,8 +6,10 @@ import {
   type SearchQuery,
 } from "@better-reverb-search/reverb-api";
 
+// Cadence: --rc-inputs-border-radius is radius-md, NOT full — only buttons are
+// pills (--rc-buttons-border-radius: radius-full). Border is --rc-inputs-color-border.
 const field =
-  "w-full rounded-md border border-[var(--color-line)] bg-transparent px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]";
+  "w-full rounded-[var(--radius-input)] border border-[var(--color-line-input)] bg-[var(--color-input-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--color-line-strong)]";
 const label = "block text-xs font-medium text-[var(--color-muted)] mb-1";
 
 export interface SearchFormProps {
@@ -36,9 +38,11 @@ export function SearchForm({
       }}
       className="space-y-4"
     >
+      {/* Reverb's search field is a tall, full-strength-bordered box. */}
       <div className="flex gap-2">
         <input
-          className={`${field} text-base`}
+          // --rc-inputs-size-height: 4.8rem
+          className="h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-input-bg)] px-3 text-base outline-none"
           placeholder="Search Reverb — e.g. 1963 Stratocaster"
           value={value.query ?? ""}
           onChange={(e) => set("query", e.target.value)}
@@ -47,7 +51,9 @@ export function SearchForm({
         <button
           type="submit"
           disabled={loading}
-          className="shrink-0 rounded-md bg-[var(--color-accent)] px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+          // --rc-buttons-color-background-loud + radius-full + semibold,
+          // disabled at --rc-buttons-opacity-disabled: 0.5.
+          className="h-12 shrink-0 rounded-full bg-[var(--color-accent)] px-6 text-base font-semibold text-white transition-colors hover:bg-[var(--color-accent-hovered)] disabled:opacity-50"
         >
           {loading ? "Searching…" : "Search"}
         </button>

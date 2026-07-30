@@ -6,6 +6,7 @@ import { ResultsGrid } from "@/components/results-grid";
 import { ResultsTable } from "@/components/results-table";
 import { SearchForm } from "@/components/search-form";
 import { StatsBar } from "@/components/stats-bar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useSearch } from "@/lib/use-search";
 
 type View = "table" | "grid";
@@ -49,6 +50,7 @@ export default function Page() {
           >
             {view === "table" ? "Table" : "Grid"}
           </Toggle>
+          <ThemeToggle />
         </div>
       </header>
 
@@ -62,7 +64,7 @@ export default function Page() {
       {error && (
         <p
           role="alert"
-          className="rounded-md border border-[var(--color-accent)] p-3 text-sm text-[var(--color-accent)]"
+          className="rounded-[var(--radius-module)] border border-[var(--color-urgent)] bg-[var(--color-urgent-bg)] p-3 text-sm text-[var(--color-sale)]"
         >
           {error}
         </p>
@@ -143,9 +145,10 @@ function Toggle({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-md border px-3 py-1.5 text-sm ${
+      // Reverb marks an active filter with a full-strength border, not a fill.
+      className={`rounded-full border px-4 py-1.5 text-sm ${
         active
-          ? "border-[var(--color-accent)] text-[var(--color-accent)]"
+          ? "border-[var(--color-line-strong)] font-medium text-[var(--color-ink)]"
           : "border-[var(--color-line)] text-[var(--color-muted)]"
       }`}
     >
@@ -168,7 +171,7 @@ function Pager({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="rounded-md border border-[var(--color-line)] px-2 py-1 disabled:opacity-40"
+      className="rounded-full border border-[var(--color-line)] px-3 py-1 disabled:opacity-40"
     >
       {children}
     </button>

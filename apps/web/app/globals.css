@@ -1,29 +1,123 @@
 @import "tailwindcss";
 
+/*
+ * Reverb Cadence tokens, fully resolved — every value below traces to a real
+ * token, no approximations left.
+ *
+ * Cadence sets html{font-size:62.5%} so 1rem = 10px in their sheets. We don't,
+ * so token rem values are converted to px here (--rc-border-radius-md: 0.8rem
+ * → 8px). Changing that convention would silently halve every radius.
+ *
+ * Light is the default; `[data-theme="dark"]` carries the dark theme file.
+ * An inline script in layout.tsx stamps the attribute before first paint, so
+ * this only ever needs the one explicit selector — no prefers-color-scheme
+ * duplicate to keep in sync.
+ */
 @theme {
-  --color-ink: oklch(0.18 0.01 260);
-  --color-paper: oklch(0.98 0.004 260);
-  --color-muted: oklch(0.55 0.015 260);
-  --color-line: oklch(0.9 0.008 260);
-  --color-accent: oklch(0.58 0.19 25);
+  /* background-primary → bw-white */
+  --color-paper: #ffffff;
+  /* background-recessed */
+  --color-surface: #f0f1f5;
+  /* background-card → background-on-primary → gray-100 */
+  --color-card: #f5f5f5;
+  /* background-elevated → bw-white */
+  --color-elevated: #ffffff;
+
+  /* text-primary → gray-900 */
+  --color-ink: #212121;
+  /* text-secondary → gray-700 */
+  --color-ink-secondary: #616161;
+  /* text-tertiary → gray-600 */
+  --color-muted: #757575;
+
+  /* border-primary → gray-300 */
+  --color-line: #e0e0e0;
+  /* border-selectable → gray-400 */
+  --color-line-selectable: #bdbdbd;
+  /* border-selected → text-primary */
+  --color-line-strong: #212121;
+  /* inputs-color-border → shadow-600 */
+  --color-line-input: rgba(0, 0, 0, 0.54);
+  /* inputs-color-background → background-primary */
+  --color-input-bg: #ffffff;
+
+  /* buttons-color-background-loud → background-loud-bold */
+  --color-accent: #ff6200;
+  /* buttons-color-background-loud-hovered */
+  --color-accent-hovered: #d95300;
+  /* text-accent → text-loud */
+  --color-accent-text: #bf4802;
+
+  /* text-discount → text-urgent */
+  --color-sale: #d80b03;
+  /* border-alert-error → accent-urgent */
+  --color-urgent: #de0902;
+  /* background-urgent-ultralight-opaque */
+  --color-urgent-bg: #ffeae7;
+  /* outline-focused → accent-info */
+  --color-focus: #036af4;
+  /* background-module-hovered → background-overlay-hovered → shadow-100 */
+  --color-overlay-hovered: rgba(0, 0, 0, 0.04);
+
+  /* border-radius: sm .4rem / md .8rem / lg 1.6rem, ×10 for our root size.
+     inputs use md; border-radius-primary (modules) is lg; buttons are full. */
+  --radius-input: 8px;
+  --radius-module: 16px;
+
+  /* font-letter-spacing-*, font-line-height-default */
+  --tracking-page: -0.01em;
+  --tracking-heading: -0.034em;
+  --leading-page: 1.4;
 }
 
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-ink: oklch(0.94 0.006 260);
-    --color-paper: oklch(0.16 0.012 260);
-    --color-muted: oklch(0.62 0.015 260);
-    --color-line: oklch(0.28 0.012 260);
-  }
+/* Cadence's dark theme token set, resolved through the same primitives. */
+:root[data-theme="dark"] {
+  --color-paper: #1c1c1c; /* background-primary */
+  --color-surface: #080808; /* background-recessed */
+  --color-card: #282828; /* background-on-primary */
+  --color-elevated: #303030; /* background-elevated */
+
+  --color-ink: #f5f5f5; /* text-primary → gray-100 */
+  --color-ink-secondary: #bdbdbd; /* text-secondary → gray-400 */
+  --color-muted: #9e9e9e; /* text-tertiary → gray-500 */
+
+  --color-line: #424242; /* border-primary → gray-800 */
+  --color-line-selectable: #616161; /* border-selectable → gray-700 */
+  --color-line-strong: #f5f5f5; /* border-selected → text-primary */
+  --color-line-input: rgba(255, 255, 255, 0.38); /* highlight-300 */
+  --color-input-bg: #212121; /* inputs-color-background → gray-900 */
+
+  --color-accent: #ff6200; /* background-loud-bold */
+  --color-accent-hovered: #ff8133; /* buttons loud hovered */
+  --color-accent-text: #fd8332; /* text-loud */
+
+  --color-sale: #ff6463; /* text-discount → text-urgent */
+  --color-urgent: #fd3744; /* accent-urgent */
+  --color-urgent-bg: #430100; /* background-urgent-ultralight-opaque */
+  --color-focus: #458cfe; /* accent-info */
+  --color-overlay-hovered: rgba(255, 255, 255, 0.13); /* highlight-100 */
 }
 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
-  font-feature-settings: "tnum" 1;
+  letter-spacing: var(--tracking-page);
+  line-height: var(--leading-page);
 }
 
-/* Numeric columns line up only with tabular figures. */
+/* font-letter-spacing-heading is tighter than body. */
+h1,
+h2,
+h3 {
+  letter-spacing: var(--tracking-heading);
+}
+
+/* Prices and years only line up in columns with tabular figures. */
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
