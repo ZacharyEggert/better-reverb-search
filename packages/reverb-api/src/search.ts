@@ -23,11 +23,21 @@ export const CONDITIONS = [
 ] as const;
 export type Condition = (typeof CONDITIONS)[number];
 
+export const PRODUCT_TYPES = [
+  "electric-guitars",
+  "effects-and-pedals",
+  "acoustic-guitars",
+  "bass-guitars",
+  "pro-audio",
+  "amps",
+] as const;
+export type ProductType = (typeof PRODUCT_TYPES)[number];
+
 export const SORTS = [
   "price|asc",
   "price|desc",
-  "created_at|desc",
-  "created_at|asc",
+  "published_at|desc",
+  "published_at|asc",
 ] as const;
 export type Sort = (typeof SORTS)[number];
 
@@ -38,11 +48,14 @@ export interface SearchQuery {
   model?: string;
   /** Category slug, e.g. "electric-guitars". */
   category?: string;
+  /** Top-level product type slug. */
+  productType?: ProductType;
   priceMin?: number;
   priceMax?: number;
   condition?: Condition;
   yearMin?: number;
   yearMax?: number;
+  /** Defaults to "published_at|desc" (newest first). */
   sort?: Sort;
   /** ISO country code, e.g. "US". */
   shipsTo?: string;
@@ -62,6 +75,7 @@ const WIRE_NAMES: Record<string, string> = {
   make: "make",
   model: "model",
   category: "category",
+  productType: "product_type",
   priceMin: "price_min",
   priceMax: "price_max",
   condition: "condition",
@@ -183,6 +197,11 @@ export function toParams(query: SearchQuery): Record<string, ParamValue> {
       `unknown condition '${query.condition}' — Reverb silently ignores it rather than erroring`,
     );
   }
+  if (query.productType && !PRODUCT_TYPES.includes(query.productType)) {
+    throw RevError.validation(
+      `unknown productType '${query.productType}' — Reverb silently ignores it rather than erroring`,
+    );
+  }
   if (query.sort && !SORTS.includes(query.sort)) {
     throw RevError.validation(`unknown sort '${query.sort}'`);
   }
@@ -197,6 +216,8 @@ export function toParams(query: SearchQuery): Record<string, ParamValue> {
   for (const s of [query.query, query.make, query.model, query.category]) {
     if (s !== undefined) checkSafeString(s);
   }
+
+  params.sort ??= "published_at|desc";
 
   return { ...params, ...query.extra };
 }

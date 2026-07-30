@@ -2,6 +2,7 @@
 
 import type { SearchQuery } from "@better-reverb-search/reverb-api";
 import { useState } from "react";
+import { ApiKeyField } from "@/components/api-key-field";
 import { ResultsGrid } from "@/components/results-grid";
 import { ResultsTable } from "@/components/results-table";
 import { SearchForm } from "@/components/search-form";
@@ -50,6 +51,7 @@ export default function Page() {
           >
             {view === "table" ? "Table" : "Grid"}
           </Toggle>
+          <ApiKeyField />
           <ThemeToggle />
         </div>
       </header>

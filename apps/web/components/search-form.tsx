@@ -2,9 +2,11 @@
 
 import {
   CONDITIONS,
+  PRODUCT_TYPES,
   SORTS,
   type SearchQuery,
 } from "@better-reverb-search/reverb-api";
+import { useState } from "react";
 
 // Cadence: --rc-inputs-border-radius is radius-md, NOT full — only buttons are
 // pills (--rc-buttons-border-radius: radius-full). Border is --rc-inputs-color-border.
@@ -29,6 +31,10 @@ export function SearchForm({
     onChange({ ...value, [key]: v });
 
   const num = (s: string) => (s === "" ? undefined : Number(s));
+
+  // Mobile-only collapse: the grid is `sm:grid` regardless, so this state is
+  // inert at desktop widths and the toggle that drives it is `sm:hidden`.
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   return (
     <form
@@ -59,7 +65,20 @@ export function SearchForm({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <button
+        type="button"
+        onClick={() => setFiltersOpen(!filtersOpen)}
+        aria-expanded={filtersOpen}
+        aria-controls="filters"
+        className="rounded-full border border-[var(--color-line)] px-4 py-1.5 text-sm text-[var(--color-muted)] sm:hidden"
+      >
+        {filtersOpen ? "Hide filters" : "Filters"}
+      </button>
+
+      <div
+        id="filters"
+        className={`${filtersOpen ? "grid" : "hidden"} grid-cols-2 gap-3 sm:grid sm:grid-cols-3 lg:grid-cols-6`}
+      >
         <div>
           <label className={label} htmlFor="make">
             Make
@@ -81,6 +100,26 @@ export function SearchForm({
             value={value.model ?? ""}
             onChange={(e) => set("model", e.target.value || undefined)}
           />
+        </div>
+        <div>
+          <label className={label} htmlFor="productType">
+            Category
+          </label>
+          <select
+            id="productType"
+            className={field}
+            value={value.productType ?? ""}
+            onChange={(e) =>
+              set("productType", (e.target.value || undefined) as never)
+            }
+          >
+            <option value="">All</option>
+            {PRODUCT_TYPES.map((p) => (
+              <option key={p} value={p}>
+                {p.replace(/-/g, " ")}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className={label} htmlFor="condition">
@@ -112,7 +151,7 @@ export function SearchForm({
             value={value.sort ?? ""}
             onChange={(e) => set("sort", (e.target.value || undefined) as never)}
           >
-            <option value="">Relevance</option>
+            <option value="">Newest first</option>
             {SORTS.map((s) => (
               <option key={s} value={s}>
                 {s.replace("|", " ")}

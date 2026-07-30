@@ -2,6 +2,7 @@
 
 import {
   RevError,
+  resolveApiKeyOptional,
   searchListings,
   type SearchQuery,
   type SearchResult,
@@ -30,7 +31,11 @@ export function useSearch() {
 
     setState((s) => ({ ...s, loading: true, error: undefined }));
     try {
-      const result = await searchListings(query, { signal: controller.signal });
+      // Read per-search, not once at mount: the key can be added mid-session.
+      const result = await searchListings(query, {
+        signal: controller.signal,
+        apiKey: resolveApiKeyOptional(),
+      });
       if (controller.signal.aborted) return;
       setState({ result, loading: false });
     } catch (e) {

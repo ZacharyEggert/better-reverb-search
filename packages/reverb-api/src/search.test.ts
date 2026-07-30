@@ -25,11 +25,18 @@ describe("toParams", () => {
       price_min: 500,
       price_max: 900,
       show_only_sold: true,
+      sort: "published_at|desc",
     });
   });
 
   it("omits false and undefined rather than sending them", () => {
-    expect(toParams({ showOnlySold: false, make: undefined })).toEqual({});
+    expect(toParams({ showOnlySold: false, make: undefined })).toEqual({
+      sort: "published_at|desc",
+    });
+  });
+
+  it("defaults sort to newest-first but honours an explicit sort", () => {
+    expect(toParams({ sort: "price|asc" }).sort).toBe("price|asc");
   });
 
   it("rejects a bad condition instead of letting Reverb silently ignore it", () => {
@@ -37,12 +44,17 @@ describe("toParams", () => {
     expect(() => toParams({ condition: "bogus" as never })).toThrow(/unknown condition/);
   });
 
+  it("maps productType and rejects a bad one", () => {
+    expect(toParams({ productType: "amps" }).product_type).toBe("amps");
+    expect(() => toParams({ productType: "bogus" as never })).toThrow(/unknown productType/);
+  });
+
   it("rejects an inverted price range", () => {
     expect(() => toParams({ priceMin: 900, priceMax: 500 })).toThrow(/priceMin/);
   });
 
   it("passes `extra` through verbatim", () => {
-    expect(toParams({ extra: { not_modelled: "x" } })).toEqual({ not_modelled: "x" });
+    expect(toParams({ extra: { not_modelled: "x" } }).not_modelled).toBe("x");
   });
 });
 
