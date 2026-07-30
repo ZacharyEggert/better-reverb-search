@@ -6,6 +6,7 @@ plus a Next.js app that searches Reverb listings and sold comps.
 ```
 packages/reverb-api   port of the reverb-api + reverb-api-cli crates (tsup → ESM + .d.ts)
 apps/web              Next.js 15 search UI, Tailwind 4, Cadence-themed
+apps/ios              SwiftUI iPhone/iPad app, same search — outside the pnpm workspace
 ```
 
 ## Quick start
@@ -49,6 +50,31 @@ export REVERB_API_KEY=...   # or storeApiKey() → localStorage in the browser
   `replaceState`, so the back button isn't buried under every filter tweak.
 - **Clear** resets the filters and results but keeps your table/grid choice —
   that's a display preference, not part of the search.
+
+## iOS app
+
+`open apps/ios/ReverbSearch.xcodeproj` and run. No dependencies, no package
+manager, no generated project — the target uses a file-system-synchronized
+group, so adding a `.swift` file under `apps/ios/ReverbSearch/` is all it takes.
+
+It re-implements the library's search layer in Swift rather than sharing it —
+`Models.swift` (query serialization, `PriceStats`, sold-URL handling, the
+`validate.rs` port) and `ReverbAPI.swift` (429 backoff, `retry-after`, 5
+attempts, 60s cap). The API gotchas below apply identically.
+
+Self-check for that logic, no test target needed:
+
+```sh
+cd apps/ios
+swiftc -o /tmp/reverb-tests Tests/main.swift ReverbSearch/Models.swift ReverbSearch/ReverbAPI.swift
+/tmp/reverb-tests   # prints "ok"
+```
+
+Deliberately not ported, because the platform already answers them: the theme
+toggle (iOS follows the system), URL search state (no address bar), and
+client-side table sorting (Reverb's `sort` param covers it server-side). The
+pager became **Load more**, and the API key lives in the Keychain instead of
+localStorage. Pagination still caps at Reverb's 50 pages.
 
 ## Using the library directly
 
