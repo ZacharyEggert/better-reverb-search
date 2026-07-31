@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXFileReference section */
+		ABCDEF012345678900000006 /* ReverbSearch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReverbSearch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		ABCDEF012345678900000002 /* ReverbSearch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -118,16 +122,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXFileReference section */
-		ABCDEF012345678900000006 /* ReverbSearch.app */ = {
-			isa = PBXFileReference;
-			explicitFileType = wrapper.application;
-			includeInIndex = 0;
-			path = ReverbSearch.app;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXFileReference section */
-
 /* Begin XCBuildConfiguration section */
 		ABCDEF01234567890000000C /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -162,14 +156,20 @@
 		ABCDEF01234567890000000E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7C3SKSW7JC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Better Reverb Search";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.betterreverbsearch.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -181,14 +181,20 @@
 		ABCDEF01234567890000000F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7C3SKSW7JC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Better Reverb Search";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.betterreverbsearch.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -200,20 +206,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		ABCDEF01234567890000000B /* Build configuration list for PBXProject "ReverbSearch" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				ABCDEF01234567890000000C /* Debug */,
-				ABCDEF01234567890000000D /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		ABCDEF012345678900000008 /* Build configuration list for PBXNativeTarget "ReverbSearch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				ABCDEF01234567890000000E /* Debug */,
 				ABCDEF01234567890000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ABCDEF01234567890000000B /* Build configuration list for PBXProject "ReverbSearch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ABCDEF01234567890000000C /* Debug */,
+				ABCDEF01234567890000000D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
