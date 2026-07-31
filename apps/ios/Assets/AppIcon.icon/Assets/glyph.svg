@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- favicon.svg glyph, no disc background. Heroicons magnifying-glass (solid) read as an R: lens = bowl, handle = leg,
+     plus a stem bar tangent to the lens. The icon's "+" is dropped so the bowl
+     counter stays open. -->
+<g transform="translate(5.8 5.8) scale(0.85)" fill="#fff">
+  <path d="M4.69 3a.75.75 0 0 1 1.5 0v18.75a.75.75 0 0 1-1.5 0Z"/>
+  <!-- Same lens path twice: black stroke first (only its outer half survives),
+       then the white fill on top. Stem is drawn under, so the outline reads as
+       the glass passing over it. -->
+  <path fill-rule="evenodd" clip-rule="evenodd" stroke="#000" stroke-width="1" stroke-linejoin="round" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"/>
+</g>
+</svg>
