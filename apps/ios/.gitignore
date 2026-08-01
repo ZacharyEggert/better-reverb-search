@@ -1,0 +1,3 @@
+# Xcode writes a shared scheme the first time xcodebuild runs; it only restates
+# what the project already implies.
+ReverbSearch.xcodeproj/xcshareddata/xcschemes/
