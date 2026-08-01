@@ -41,7 +41,9 @@ final class SearchModel {
         // term under different filters are free, so neither `loadMore` nor a
         // filter tweak can strand you mid-list.
         let term = query.query.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !appending {
+        // A blank term is a browse, not a search — free, and it leaves the
+        // charged term's re-run budget alone.
+        if !appending && !term.isEmpty {
             let isRerun = term == chargedTerm && rerunsLeft > 0
             if !isRerun && !Store.shared.isSubscribed {
                 guard QueryQuota.remaining > 0 else {
