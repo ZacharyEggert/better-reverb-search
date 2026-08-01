@@ -2,7 +2,7 @@
 // discount math, stats, and input validation.
 //
 //   cd apps/ios && swiftc -o /tmp/reverb-tests Tests/main.swift ReverbSearch/Models.swift \
-//       ReverbSearch/ReverbAPI.swift && /tmp/reverb-tests
+//       ReverbSearch/ReverbAPI.swift ReverbSearch/QueryQuota.swift && /tmp/reverb-tests
 import Foundation
 
 func params(_ q: SearchQuery) -> [String: String] {
@@ -80,5 +80,16 @@ assert(listings[1].discountPercent == nil)
 let stats = PriceStats(listings)!
 assert(stats.count == 2 && stats.min == 5000 && stats.median == 7000 && stats.max == 9000)
 assert(PriceStats([]) == nil)
+
+// Free-tier quota: counts down, clamps at zero, and a stale day starts over.
+UserDefaults.standard.removeObject(forKey: "quota")
+assert(QueryQuota.remaining == QueryQuota.dailyLimit)
+for _ in 0..<QueryQuota.dailyLimit { QueryQuota.consume() }
+assert(QueryQuota.used == QueryQuota.dailyLimit && QueryQuota.remaining == 0)
+QueryQuota.consume()
+assert(QueryQuota.remaining == 0)
+UserDefaults.standard.set(["day": 1, "count": 99], forKey: "quota")
+assert(QueryQuota.remaining == QueryQuota.dailyLimit)
+UserDefaults.standard.removeObject(forKey: "quota")
 
 print("ok")

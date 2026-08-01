@@ -11,6 +11,8 @@ final class SearchModel {
     var result: SearchResult?
     var errorMessage: String?
     var loading = false
+    /// Set when a search is refused for want of quota; drives the paywall sheet.
+    var showPaywall = false
 
     /// The mode the *loaded* results were fetched in — not the pending toggle,
     /// so Ask/Off never render against active listings.
@@ -27,6 +29,16 @@ final class SearchModel {
     }
 
     func search(page: Int = 1, appending: Bool = false) {
+        // Only a new search spends quota — paging through results you already
+        // paid for is free, so `loadMore` can't strand you mid-list.
+        if !appending && !Store.shared.isSubscribed {
+            guard QueryQuota.remaining > 0 else {
+                showPaywall = true
+                return
+            }
+            QueryQuota.consume()
+        }
+
         task?.cancel()
         query.page = page
         let query = query

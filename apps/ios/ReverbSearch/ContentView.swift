@@ -4,6 +4,7 @@ struct ContentView: View {
     @State private var model = SearchModel()
     @State private var showFilters = false
     @State private var showAPIKey = false
+    @State private var store = Store.shared
     // Display preference, not part of the search — survives Clear.
     @AppStorage("view") private var grid = false
 
@@ -24,6 +25,7 @@ struct ContentView: View {
                     FiltersView(query: $model.query) { model.search() }
                 }
                 .sheet(isPresented: $showAPIKey) { APIKeyView() }
+                .sheet(isPresented: $model.showPaywall) { PaywallView() }
         }
     }
 
@@ -52,6 +54,12 @@ struct ContentView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
+                if !store.isSubscribed {
+                    Button(
+                        "\(QueryQuota.remaining) of \(QueryQuota.dailyLimit) searches left today",
+                        systemImage: "infinity"
+                    ) { model.showPaywall = true }
+                }
                 Button("API key", systemImage: "key") { showAPIKey = true }
                 Button("Clear", systemImage: "xmark.circle", role: .destructive) { model.clear() }
             } label: {
