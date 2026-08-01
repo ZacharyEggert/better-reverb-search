@@ -20,6 +20,14 @@ final class SearchModel {
 
     private var task: Task<Void, Never>?
 
+    /// The search term quota was last spent on. Refining filters, flipping to
+    /// sold, or paging re-runs the same term — only a new term costs a query.
+    private var chargedTerm: String?
+    /// Free re-runs left on `chargedTerm`, so filters can't be toggled forever
+    /// on one paid search.
+    private var rerunsLeft = 0
+    private static let rerunCap = 10
+
     var stats: PriceStats? { PriceStats(listings) }
 
     /// Reverb caps at 50 pages regardless of `total`.
@@ -29,14 +37,21 @@ final class SearchModel {
     }
 
     func search(page: Int = 1, appending: Bool = false) {
-        // Only a new search spends quota — paging through results you already
-        // paid for is free, so `loadMore` can't strand you mid-list.
-        if !appending && !Store.shared.isSubscribed {
-            guard QueryQuota.remaining > 0 else {
-                showPaywall = true
-                return
+        // Only a new search term spends quota — paging and re-running the same
+        // term under different filters are free, so neither `loadMore` nor a
+        // filter tweak can strand you mid-list.
+        let term = query.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !appending {
+            let isRerun = term == chargedTerm && rerunsLeft > 0
+            if !isRerun && !Store.shared.isSubscribed {
+                guard QueryQuota.remaining > 0 else {
+                    showPaywall = true
+                    return
+                }
+                QueryQuota.consume()
             }
-            QueryQuota.consume()
+            chargedTerm = term
+            rerunsLeft = isRerun ? rerunsLeft - 1 : Self.rerunCap
         }
 
         task?.cancel()
@@ -78,5 +93,7 @@ final class SearchModel {
         errorMessage = nil
         loading = false
         resultsAreSold = false
+        chargedTerm = nil
+        rerunsLeft = 0
     }
 }
