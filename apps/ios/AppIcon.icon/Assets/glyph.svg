@@ -1,13 +1,7 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<!-- favicon.svg glyph, no disc background. Heroicons magnifying-glass (solid) read as an R: lens = bowl, handle = leg,
-     plus a stem bar tangent to the lens. The icon's "+" is dropped so the bowl
-     counter stays open. -->
-<g transform="translate(5.8 5.8) scale(0.85)" fill="#fff">
-  <path d="M4.69 3a.75.75 0 0 1 1.5 0v18.75a.75.75 0 0 1-1.5 0Z"/>
-  <!-- Same lens path twice: black stroke first (only its outer half survives),
-       then the white fill on top. Stem is drawn under, so the outline reads as
-       the glass passing over it. -->
-  <path fill-rule="evenodd" clip-rule="evenodd" stroke="#000" stroke-width="1" stroke-linejoin="round" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"/>
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"/>
+<!-- favicon.svg inner glyph, disc background and outer ring dropped. -->
+<g fill="#fff">
+  <!-- Second subpath is the bowl counter, cut out via evenodd. -->
+  <path fill-rule="evenodd" d="M18.02,15.18c2.21-1.22,4.03-4.7,3.2-7.2-.54-1.4-2.26-1.69-3.57-1.28-2.49.71-3.99,3.18-3.87,5.81.04,2.05,2.08,3.75,4.07,2.75l.17-.08ZM15.31,6.77c-1.57,0-3.38.64-4.83,1.71-1.53,1.13-2.42,2.54-2.42,3.85,0,.6.15,1.98,1.57,1.98.3,0,.6-.07.84-.14-.11.58-.44,1.03-.72,1.33-.71.74-1.8,1.21-2.84,1.21-.95,0-1.72-.28-2.22-.81-.49-.52-.71-1.27-.66-2.22.19-3.12,2.33-5.36,6.36-6.67,3.28-1.06,6.77-1.14,7.76-1.14,1.24,0,2.83.07,4.2.6,1.67.66,2.49,1.81,2.49,3.53,0,4.65-5.88,5.96-6.15,6.33-.17.24.18.5.41.73.35.37.88.92,1.25,2.22.35,1.28,1.38,4.25,3.22,4.25.96,0,1.45-.16,1.9-.41.73-.4,1.08.23.05.86-.95.58-2.68,1.71-4.6,1.73-.02,0-.04,0-.07,0-.93,0-1.67-.29-2.22-.87-1.16-1.23-1.21-3.48-1.14-4.71.09-1.61-.41-2.63-.84-3.2-1.31-.65-2.88-.81-3.99-1.78-2.35-2.8.09-6.69,2.8-8.4-.05,0-.1,0-.15,0Z"/>
 </g>
 </svg>
