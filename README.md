@@ -51,6 +51,50 @@ export REVERB_API_KEY=...   # or storeApiKey() → localStorage in the browser
 - **Clear** resets the filters and results but keeps your table/grid choice —
   that's a display preference, not part of the search.
 
+## JSON endpoint
+
+`GET /api/search` exposes the same search to outside consumers. It takes the
+query params the UI puts in its URL bar (`query`, `make`, `model`, `condition`,
+`priceMin`/`priceMax`, `yearMin`/`yearMax`, `sort`, `showOnlySold=1`, `page`,
+`perPage`, …) — so any shareable app URL works as an API URL.
+
+The caller supplies their own Reverb key, via `Authorization: Bearer <key>` or
+`x-api-key`. There is no server-side fallback key: no key → `401`.
+
+```sh
+curl -H "Authorization: Bearer $REVERB_API_KEY" \
+  "https://reverb-search.diablo.guitars/api/search?query=stratocaster&perPage=2"
+```
+
+```jsonc
+{
+  "total": 77808, "currentPage": 1, "perPage": 2, "totalPages": 50,
+  "humanizedParams": "\"stratocaster\" Gear",
+  "listings": [{
+    "id": 100154665,
+    "title": "Genuine 1990 Fender MIM Black Standard Strat",
+    "year": "1990",
+    "condition": { "slug": "very-good", "display_name": "Very Good" },
+    "price": { "display": "$199.99", "amount_cents": 19999, "currency": "USD" },
+    "originalPrice": null,      // the ask, on sold listings
+    "discountPercent": null,    // how far below it cleared
+    "shopName": "More Strats, please",
+    "publishedAt": "2026-08-05T17:29:29-05:00",
+    "photo": "https://rvb-img.reverb.com/...",
+    "url": "https://reverb.com/item/100154665-...",   // ?show_sold=true when sold
+    "sold": false
+  }]
+}
+```
+
+Listings are trimmed to the fields the UI renders — not Reverb's full payload.
+Rate limited to **5 requests per 5 seconds per key**; over that returns `429`
+with `retry-after`. The window is in-process, so it's per server instance.
+
+Errors come back as `{ "error": "...", "type": "api|auth|validation|schema" }`
+with `401` for auth, `400` for validation/schema, and Reverb's own status
+otherwise.
+
 ## iOS app
 
 `open apps/ios/ReverbSearch.xcodeproj` and run. No dependencies, no package
