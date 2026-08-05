@@ -21,7 +21,17 @@ export const CONDITIONS = [
   "poor",
   "non-functioning",
 ] as const;
-export type Condition = (typeof CONDITIONS)[number];
+/**
+ * Coarse buckets, a different axis from the seven grades above rather than more
+ * members of it — `used` (25.8k) and `new` (51.6k) split the whole result set
+ * between them, while `excellent` (9.8k) is a slice of `used`. Valid as a
+ * search filter only; a listing's own `condition.slug` is always a grade.
+ */
+export const CONDITION_BUCKETS = ["used", "new", "b-stock"] as const;
+
+export type Condition =
+  | (typeof CONDITIONS)[number]
+  | (typeof CONDITION_BUCKETS)[number];
 
 export const PRODUCT_TYPES = [
   "electric-guitars",
@@ -192,7 +202,11 @@ export function toParams(query: SearchQuery): Record<string, ParamValue> {
     params[wire] = value as ParamValue;
   }
 
-  if (query.condition && !CONDITIONS.includes(query.condition)) {
+  if (
+    query.condition &&
+    !CONDITIONS.includes(query.condition as never) &&
+    !CONDITION_BUCKETS.includes(query.condition as never)
+  ) {
     throw RevError.validation(
       `unknown condition '${query.condition}' — Reverb silently ignores it rather than erroring`,
     );

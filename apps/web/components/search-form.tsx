@@ -2,6 +2,7 @@
 
 import {
   CONDITIONS,
+  CONDITION_BUCKETS,
   PRODUCT_TYPES,
   SORTS,
   type SearchQuery,
@@ -134,11 +135,19 @@ export function SearchForm({
             }
           >
             <option value="">Any</option>
-            {CONDITIONS.map((c) => (
+            {CONDITION_BUCKETS.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
             ))}
+            {/* Grades are a slice of `used`, so they read as a sub-list. */}
+            <optgroup label="Used — by grade">
+              {CONDITIONS.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </div>
         <div>
