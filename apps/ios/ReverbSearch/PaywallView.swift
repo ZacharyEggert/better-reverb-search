@@ -14,7 +14,7 @@ struct PaywallView: View {
 
     /// Falls back to the configured price only if the App Store is unreachable —
     /// the storefront's own `displayPrice` is the one that's correct abroad.
-    private var price: String { store.product?.displayPrice ?? "$29.99" }
+    private var price: String { store.product?.displayPrice ?? "$49.99" }
 
     private var pitch: String {
         guard let intro = store.introOffer else {
