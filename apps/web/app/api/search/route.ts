@@ -6,6 +6,7 @@ import {
   type Listing,
 } from "@better-reverb-search/reverb-api";
 import { fromSearchParams } from "@/lib/query-url";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * `GET /api/search?query=...` — same params the UI puts in the URL bar.
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const retryAfter = rateLimit(apiKey);
+  const retryAfter = rateLimit(`search:${apiKey}`, LIMIT, WINDOW_MS);
   if (retryAfter) {
     return Response.json(
       { error: `rate limit exceeded — ${LIMIT} requests per 5s` },
@@ -62,29 +63,6 @@ export async function GET(request: Request) {
 
 const LIMIT = 5;
 const WINDOW_MS = 5_000;
-
-// ponytail: in-process sliding window, so the limit is per server instance.
-// Move to Redis/Upstash if this ever runs on more than one.
-const hits = new Map<string, number[]>();
-
-/** Records a hit; returns retry-after seconds when the key is over its limit. */
-function rateLimit(apiKey: string): number | undefined {
-  const now = Date.now();
-  const cutoff = now - WINDOW_MS;
-
-  for (const [k, times] of hits) {
-    const kept = times.filter((t) => t > cutoff);
-    if (kept.length) hits.set(k, kept);
-    else hits.delete(k);
-  }
-
-  const recent = hits.get(apiKey) ?? [];
-  if (recent.length >= LIMIT) {
-    return Math.max(1, Math.ceil((recent[0]! + WINDOW_MS - now) / 1000));
-  }
-  hits.set(apiKey, [...recent, now]);
-  return undefined;
-}
 
 const STATUS: Partial<Record<RevError["type"], number>> = {
   auth: 401,
