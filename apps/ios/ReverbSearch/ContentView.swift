@@ -7,6 +7,9 @@ struct ContentView: View {
     @State private var showPromoCode = false
     @State private var toast: String?
     @State private var store = Store.shared
+    // Mirrors QueryQuota.dailyLimit so a promo code taking effect re-renders the
+    // count — the quota itself is a static with nothing to observe.
+    @State private var dailyLimit = QueryQuota.dailyLimit
     // Display preference, not part of the search — survives Clear.
     @AppStorage("view") private var grid = false
 
@@ -27,7 +30,10 @@ struct ContentView: View {
                     FiltersView(query: $model.query) { model.search() }
                 }
                 .sheet(isPresented: $showAPIKey) { APIKeyView() }
-                .sheet(isPresented: $showPromoCode) { PromoCodeView() }
+                // Code entered or cleared — the limit may have moved.
+                .sheet(isPresented: $showPromoCode) { dailyLimit = QueryQuota.dailyLimit } content: {
+                    PromoCodeView()
+                }
                 .sheet(isPresented: $model.showPaywall) { PaywallView() }
                 // Re-check the stored promo code once per launch.
                 .task {
@@ -35,6 +41,7 @@ struct ContentView: View {
                         toast =
                             "Promo service unreachable — daily limit stays at \(QueryQuota.dailyLimit)."
                     }
+                    dailyLimit = QueryQuota.dailyLimit
                 }
                 .overlay(alignment: .bottom) {
                     if let toast {
@@ -76,7 +83,7 @@ struct ContentView: View {
             Menu {
                 if !store.isSubscribed, QueryQuota.offerUpgrade {
                     Button(
-                        "\(QueryQuota.remaining) of \(QueryQuota.dailyLimit) searches left today",
+                        "\(QueryQuota.remaining) of \(dailyLimit) searches left today",
                         systemImage: "infinity"
                     ) { model.showPaywall = true }
                 }
