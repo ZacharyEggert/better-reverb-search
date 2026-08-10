@@ -67,7 +67,7 @@ struct FiltersView: View {
 struct PromoCodeView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft = ""
-    @State private var applied = BypassCode.isActive
+    @State private var applied = BypassCode.hasCode
     @State private var working = false
     @State private var message: String?
 

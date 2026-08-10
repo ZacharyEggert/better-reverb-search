@@ -11,17 +11,27 @@ enum BypassCode {
 
     private static let key = "bypassCode"
 
-    /// True while a code is stored — cleared only when the server rejects it,
-    /// so an offline launch keeps the limit the user already earned.
-    static var isActive: Bool { UserDefaults.standard.string(forKey: key) != nil }
+    /// The raised limit is live only once the server has confirmed the code
+    /// this launch — an unreachable server means the default limit, not a free
+    /// pass. Not persisted, so every launch has to earn it again.
+    nonisolated(unsafe) static var verified = false
 
-    /// Re-checks the stored code. No code or no answer (offline, server down)
-    /// leaves things exactly as they were.
-    static func refresh() async {
-        guard let code = UserDefaults.standard.string(forKey: key),
-              let valid = await verify(code), !valid
-        else { return }
-        UserDefaults.standard.removeObject(forKey: key)
+    static var isActive: Bool { verified }
+
+    /// A code is stored, whether or not it's been confirmed yet.
+    static var hasCode: Bool { UserDefaults.standard.string(forKey: key) != nil }
+
+    enum Check { case noCode, valid, invalid, unreachable }
+
+    /// Re-checks the stored code. Rejection drops it; an unreachable server
+    /// keeps it but leaves the limit at the default.
+    @discardableResult
+    static func refresh() async -> Check {
+        guard let code = UserDefaults.standard.string(forKey: key) else { return .noCode }
+        guard let valid = await verify(code) else { return .unreachable }
+        verified = valid
+        if !valid { UserDefaults.standard.removeObject(forKey: key) }
+        return valid ? .valid : .invalid
     }
 
     /// Stores the code if the server accepts it. Returns whether it did;
@@ -31,12 +41,16 @@ enum BypassCode {
         guard let valid = await verify(code) else {
             throw RevError.other("Couldn't reach the server — try again.")
         }
-        if valid { UserDefaults.standard.set(code, forKey: key) }
+        if valid {
+            UserDefaults.standard.set(code, forKey: key)
+            verified = true
+        }
         return valid
     }
 
     static func remove() {
         UserDefaults.standard.removeObject(forKey: key)
+        verified = false
     }
 
     /// nil means "couldn't tell" — never treat that as a rejection.

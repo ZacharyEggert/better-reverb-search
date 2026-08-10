@@ -93,9 +93,12 @@ UserDefaults.standard.set(["day": 1, "count": 99], forKey: "quota")
 assert(QueryQuota.remaining == QueryQuota.dailyLimit)
 UserDefaults.standard.removeObject(forKey: "quota")
 
-// A stored promo code raises the limit; removing it drops back to the default.
+// A stored code alone doesn't raise the limit — only a server-confirmed one,
+// so an unreachable service leaves the user at the default.
 assert(!BypassCode.isActive && QueryQuota.dailyLimit == 5)
 UserDefaults.standard.set("code", forKey: "bypassCode")
+assert(BypassCode.hasCode && !BypassCode.isActive && QueryQuota.dailyLimit == 5)
+BypassCode.verified = true
 assert(BypassCode.isActive && QueryQuota.dailyLimit == BypassCode.raisedLimit)
 
 // With a code, the upgrade pitch stays hidden until half the quota is spent.

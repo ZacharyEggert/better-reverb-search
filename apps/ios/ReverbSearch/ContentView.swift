@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var showFilters = false
     @State private var showAPIKey = false
     @State private var showPromoCode = false
+    @State private var toast: String?
     @State private var store = Store.shared
     // Display preference, not part of the search — survives Clear.
     @AppStorage("view") private var grid = false
@@ -28,6 +29,23 @@ struct ContentView: View {
                 .sheet(isPresented: $showAPIKey) { APIKeyView() }
                 .sheet(isPresented: $showPromoCode) { PromoCodeView() }
                 .sheet(isPresented: $model.showPaywall) { PaywallView() }
+                // Re-check the stored promo code once per launch.
+                .task {
+                    if await BypassCode.refresh() == .unreachable {
+                        toast =
+                            "Promo service unreachable — daily limit stays at \(QueryQuota.dailyLimit)."
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    if let toast {
+                        ToastView(text: toast)
+                            .task {
+                                try? await Task.sleep(for: .seconds(4))
+                                self.toast = nil
+                            }
+                    }
+                }
+                .animation(.default, value: toast)
         }
     }
 
@@ -135,6 +153,22 @@ struct ContentView: View {
             .padding()
         }
         .overlay { if model.loading { ProgressView() } }
+    }
+}
+
+/// ponytail: one transient message at the bottom of the screen. That's the
+/// whole toast system — no queue, no library.
+private struct ToastView: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.footnote)
+            .multilineTextAlignment(.center)
+            .padding(12)
+            .background(.thinMaterial, in: .rect(cornerRadius: 12))
+            .padding()
+            .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }
 
