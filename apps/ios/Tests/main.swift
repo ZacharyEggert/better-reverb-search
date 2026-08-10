@@ -2,7 +2,8 @@
 // discount math, stats, and input validation.
 //
 //   cd apps/ios && swiftc -o /tmp/reverb-tests Tests/main.swift ReverbSearch/Models.swift \
-//       ReverbSearch/ReverbAPI.swift ReverbSearch/QueryQuota.swift && /tmp/reverb-tests
+//       ReverbSearch/ReverbAPI.swift ReverbSearch/QueryQuota.swift ReverbSearch/BypassCode.swift \
+//       && /tmp/reverb-tests
 import Foundation
 
 func params(_ q: SearchQuery) -> [String: String] {
@@ -91,5 +92,24 @@ assert(QueryQuota.remaining == 0)
 UserDefaults.standard.set(["day": 1, "count": 99], forKey: "quota")
 assert(QueryQuota.remaining == QueryQuota.dailyLimit)
 UserDefaults.standard.removeObject(forKey: "quota")
+
+// A stored promo code raises the limit; removing it drops back to the default.
+assert(!BypassCode.isActive && QueryQuota.dailyLimit == 5)
+UserDefaults.standard.set("code", forKey: "bypassCode")
+assert(BypassCode.isActive && QueryQuota.dailyLimit == BypassCode.raisedLimit)
+
+// With a code, the upgrade pitch stays hidden until half the quota is spent.
+assert(!QueryQuota.offerUpgrade)
+UserDefaults.standard.set(
+    ["day": Calendar.current.ordinality(of: .day, in: .era, for: .now)!,
+     "count": BypassCode.raisedLimit / 2],
+    forKey: "quota")
+assert(QueryQuota.offerUpgrade)
+UserDefaults.standard.removeObject(forKey: "quota")
+
+BypassCode.remove()
+assert(!BypassCode.isActive && QueryQuota.dailyLimit == 5)
+// Without one it's always available.
+assert(QueryQuota.offerUpgrade)
 
 print("ok")

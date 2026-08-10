@@ -8,7 +8,8 @@ import Foundation
 /// Keychain (see `APIKeyStore`, which survives reinstall) if freeloading ever
 /// shows up in the numbers.
 enum QueryQuota {
-    static let dailyLimit = 5
+    /// A verified promo code raises it; see `BypassCode`.
+    static var dailyLimit: Int { BypassCode.isActive ? BypassCode.raisedLimit : 5 }
     private static let key = "quota"
 
     static var used: Int {
@@ -18,6 +19,10 @@ enum QueryQuota {
     }
 
     static var remaining: Int { max(0, dailyLimit - used) }
+
+    /// A promo code buys a quiet app: no upgrade pitch until half the day's
+    /// quota is spent. Without one, the pitch is always available.
+    static var offerUpgrade: Bool { !BypassCode.isActive || used >= dailyLimit / 2 }
 
     static func consume() {
         UserDefaults.standard.set(["day": today, "count": used + 1], forKey: key)

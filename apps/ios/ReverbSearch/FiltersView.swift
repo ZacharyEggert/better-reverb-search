@@ -64,6 +64,68 @@ struct FiltersView: View {
     }
 }
 
+struct PromoCodeView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft = ""
+    @State private var applied = BypassCode.isActive
+    @State private var working = false
+    @State private var message: String?
+
+    private var code: String { draft.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(applied ? "Applied — enter to replace" : "Promo code", text: $draft)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    if applied {
+                        Button("Remove code", role: .destructive) {
+                            BypassCode.remove()
+                            applied = false
+                        }
+                    }
+                    if let message {
+                        Text(message).font(.callout).foregroundStyle(.red)
+                    }
+                } footer: {
+                    Text(
+                        applied
+                            ? "\(BypassCode.raisedLimit) searches a day while the code stays valid."
+                            : "Have a code? It raises your daily search limit.")
+                }
+            }
+            .navigationTitle("Promo code")
+            .navigationBarTitleDisplayMode(.inline)
+            .overlay { if working { ProgressView() } }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Apply") { apply() }
+                        .disabled(working || code.isEmpty)
+                }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func apply() {
+        working = true
+        message = nil
+        Task {
+            do {
+                if try await BypassCode.submit(code) { dismiss() }
+                else { message = "That code isn't valid." }
+            } catch {
+                message = error.localizedDescription
+            }
+            working = false
+        }
+    }
+}
+
 struct APIKeyView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft = ""
