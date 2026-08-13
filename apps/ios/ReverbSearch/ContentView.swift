@@ -16,7 +16,9 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             results
-                .navigationTitle("Reverb")
+                .navigationTitle("Better Reverb Search")
+                // Inline: the full name doesn't fit a large title.
+                .navigationBarTitleDisplayMode(.inline)
                 .searchable(
                     text: $model.query.query,
                     placement: .navigationBarDrawer(displayMode: .always),

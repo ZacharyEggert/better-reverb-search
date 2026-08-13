@@ -103,7 +103,15 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
   Scaffold(
     topBar = {
       TopAppBar(
-        title = { Text("Reverb") },
+        // titleMedium: the full name overflows at titleLarge next to three actions.
+        title = {
+          Text(
+            "Better Reverb Search",
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+        },
         actions = {
           IconButton(
             onClick = {
