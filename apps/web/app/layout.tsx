@@ -26,7 +26,13 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        {children}
+        {/* Nominative use of the Reverb mark — say plainly whose app this isn't. */}
+        <footer className="px-6 pb-8 text-center text-xs text-[var(--color-muted)]">
+          Created by Ex Nihilo LLC. Not affiliated with Reverb.com LLC.
+        </footer>
+      </body>
     </html>
   );
 }
