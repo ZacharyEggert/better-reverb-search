@@ -22,24 +22,29 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -63,6 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
+import llc.exnihilo.betterreverbsearch.R
 import llc.exnihilo.betterreverbsearch.data.Billing
 import llc.exnihilo.betterreverbsearch.data.BypassCode
 import llc.exnihilo.betterreverbsearch.data.Listing
@@ -98,15 +105,18 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
       TopAppBar(
         title = { Text("Reverb") },
         actions = {
-          TextButton(
+          IconButton(
             onClick = {
               grid = !grid
               Prefs.gridView = grid
             }
           ) {
-            Text(if (grid) "List" else "Grid")
+            if (grid) Icon(Icons.AutoMirrored.Filled.List, contentDescription = "List view")
+            else Icon(painterResource(R.drawable.ic_grid), contentDescription = "Grid view")
           }
-          TextButton(onClick = { showFilters = true }) { Text("Filters") }
+          IconButton(onClick = { showFilters = true }) {
+            Icon(painterResource(R.drawable.ic_filter), contentDescription = "Filters")
+          }
           Box {
             IconButton(onClick = { showMenu = true }) {
               Icon(Icons.Default.MoreVert, contentDescription = "More")
@@ -115,6 +125,7 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
               if (!subscribed && QueryQuota.offerUpgrade) {
                 DropdownMenuItem(
                   text = { Text("${QueryQuota.remaining} of $dailyLimit searches left today") },
+                  leadingIcon = { Icon(painterResource(R.drawable.ic_infinity), null) },
                   onClick = {
                     showMenu = false
                     model.showPaywall = true
@@ -123,6 +134,7 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
               }
               DropdownMenuItem(
                 text = { Text("API key") },
+                leadingIcon = { Icon(Icons.Default.Lock, null) },
                 onClick = {
                   showMenu = false
                   showApiKey = true
@@ -130,13 +142,17 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
               )
               DropdownMenuItem(
                 text = { Text("Promo code") },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_tag), null) },
                 onClick = {
                   showMenu = false
                   showPromoCode = true
                 },
               )
               DropdownMenuItem(
-                text = { Text("Clear") },
+                text = { Text("Clear", color = MaterialTheme.colorScheme.error) },
+                leadingIcon = {
+                  Icon(Icons.Default.Clear, null, tint = MaterialTheme.colorScheme.error)
+                },
                 onClick = {
                   showMenu = false
                   model.clear()
@@ -211,6 +227,12 @@ private fun SearchField(model: SearchViewModel) {
       }
     },
     singleLine = true,
+    shape = RoundedCornerShape(28.dp),
+    colors =
+      OutlinedTextFieldDefaults.colors(
+        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+      ),
     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
     keyboardActions = KeyboardActions(onSearch = { model.search() }),
     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -220,14 +242,22 @@ private fun SearchField(model: SearchViewModel) {
 @Composable
 private fun SoldToggle(model: SearchViewModel) {
   // Sold comps answer "what did this clear for", not "what are people asking".
+  val sold = model.query.showOnlySold
   Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
     FilterChip(
-      selected = model.query.showOnlySold,
+      selected = sold,
       onClick = {
-        model.query = model.query.copy(showOnlySold = !model.query.showOnlySold)
+        model.query = model.query.copy(showOnlySold = !sold)
         model.search()
       },
-      label = { Text(if (model.query.showOnlySold) "Sold comps" else "Active") },
+      label = { Text(if (sold) "Sold comps" else "Active") },
+      leadingIcon = {
+        Icon(
+          painterResource(R.drawable.ic_tag),
+          contentDescription = null,
+          modifier = Modifier.size(FilterChipDefaults.IconSize),
+        )
+      },
     )
   }
 }
@@ -248,7 +278,7 @@ private fun Results(model: SearchViewModel, grid: Boolean) {
       header {
         Text(
           message,
-          color = MaterialTheme.colorScheme.error,
+          color = MaterialTheme.colorScheme.onErrorContainer,
           style = MaterialTheme.typography.bodyMedium,
           modifier =
             Modifier.fillMaxWidth()
@@ -285,6 +315,12 @@ private fun Results(model: SearchViewModel, grid: Boolean) {
           Modifier.fillMaxWidth().padding(top = 40.dp),
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+          Icon(
+            painterResource(R.drawable.ic_glyph),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(56.dp).padding(bottom = 12.dp),
+          )
           Text(
             if (result == null) "Search Reverb" else "No listings matched",
             style = MaterialTheme.typography.titleLarge,
@@ -324,24 +360,25 @@ private fun Results(model: SearchViewModel, grid: Boolean) {
 
 @Composable
 private fun StatsCard(stats: PriceStats, total: Int, sold: Boolean) {
-  Column(
-    Modifier.fillMaxWidth()
-      .clip(RoundedCornerShape(12.dp))
-      .background(MaterialTheme.colorScheme.surfaceVariant)
-      .padding(16.dp),
-    verticalArrangement = Arrangement.spacedBy(8.dp),
+  Card(
+    Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(12.dp),
+    colors =
+      CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-      StatCell(if (sold) "Lowest sold" else "Lowest ask", stats.format(stats.min), false)
-      StatCell(if (sold) "Median sold" else "Median ask", stats.format(stats.median), true)
-      StatCell(if (sold) "Highest sold" else "Highest ask", stats.format(stats.max), false)
+    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        StatCell(if (sold) "Lowest sold" else "Lowest ask", stats.format(stats.min), false)
+        StatCell(if (sold) "Median sold" else "Median ask", stats.format(stats.median), true)
+        StatCell(if (sold) "Highest sold" else "Highest ask", stats.format(stats.max), false)
+      }
+      // The API caps at 50 pages; stats only ever describe what we loaded.
+      Text(
+        "Over the ${stats.count} loaded ${if (sold) "sold listings" else "listings"} — not all ${total.formatted()} matches.",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
     }
-    // The API caps at 50 pages; stats only ever describe what we loaded.
-    Text(
-      "Over the ${stats.count} loaded ${if (sold) "sold listings" else "listings"} — not all ${total.formatted()} matches.",
-      style = MaterialTheme.typography.labelSmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
   }
 }
 

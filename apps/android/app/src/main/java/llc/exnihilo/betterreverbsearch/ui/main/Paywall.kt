@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -26,11 +28,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import llc.exnihilo.betterreverbsearch.R
 import llc.exnihilo.betterreverbsearch.data.Billing
 import llc.exnihilo.betterreverbsearch.data.QueryQuota
 import llc.exnihilo.betterreverbsearch.data.billingPeriodLabel
@@ -78,6 +82,12 @@ fun PaywallSheet(onDismiss: () -> Unit) {
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+      Icon(
+        painterResource(R.drawable.ic_glyph),
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.size(64.dp),
+      )
       Text("Unlimited Queries", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
       Text(
         pitch,
@@ -86,10 +96,10 @@ fun PaywallSheet(onDismiss: () -> Unit) {
         textAlign = TextAlign.Center,
       )
 
-      Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("•  Unlimited searches, every day")
-        Text("•  Sold comps — what gear actually clears for")
-        Text("•  Low / median / high on every result set")
+      Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Benefit(R.drawable.ic_infinity, "Unlimited searches, every day")
+        Benefit(R.drawable.ic_tag, "Sold comps — what gear actually clears for")
+        Benefit(R.drawable.ic_chart, "Low / median / high on every result set")
       }
 
       errorMessage?.let {
@@ -144,6 +154,22 @@ fun PaywallSheet(onDismiss: () -> Unit) {
 
       TextButton(onClick = onDismiss) { Text("Not now") }
     }
+  }
+}
+
+@Composable
+private fun Benefit(icon: Int, text: String) {
+  Row(
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Icon(
+      painterResource(icon),
+      contentDescription = null,
+      tint = MaterialTheme.colorScheme.primary,
+      modifier = Modifier.size(20.dp),
+    )
+    Text(text, style = MaterialTheme.typography.bodyMedium)
   }
 }
 
