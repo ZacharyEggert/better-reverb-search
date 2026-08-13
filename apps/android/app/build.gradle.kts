@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
@@ -14,9 +16,25 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
+    // ponytail: unsigned local builds still work when keystore.properties is absent
+    val ksFile = rootProject.file("keystore.properties")
+    val ksProps = Properties().apply {
+        if (ksFile.exists()) ksFile.inputStream().use { load(it) }
+    }
+    if (ksFile.exists()) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(ksProps.getProperty("storeFile"))
+                storePassword = ksProps.getProperty("storePassword")
+                keyAlias = ksProps.getProperty("keyAlias")
+                keyPassword = ksProps.getProperty("keyPassword")
+            }
+        }
+    }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

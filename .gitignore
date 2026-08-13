@@ -9,3 +9,4 @@ dist/
 tsconfig.tsbuildinfo
 apps/ios/build/
 xcuserdata/
+apps/android/keystore.properties
