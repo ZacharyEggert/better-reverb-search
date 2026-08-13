@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// Nominative use of the Reverb mark — say plainly whose app this isn't.
+let affiliationDisclaimer = "Created by Ex Nihilo LLC. Not affiliated with Reverb.com LLC."
+
 struct ContentView: View {
     @State private var model = SearchModel()
     @State private var showFilters = false
@@ -138,6 +141,11 @@ struct ContentView: View {
                                 ? "Search active listings, or flip to sold comps to see what gear actually clears for."
                                 : "Try loosening a filter."))
                         .padding(.top, 40)
+                    Text(affiliationDisclaimer)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
                 } else if grid {
                     LazyVGrid(
                         columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12

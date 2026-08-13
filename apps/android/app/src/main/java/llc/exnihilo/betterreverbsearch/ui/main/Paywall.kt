@@ -153,6 +153,13 @@ fun PaywallSheet(onDismiss: () -> Unit) {
       }
 
       TextButton(onClick = onDismiss) { Text("Not now") }
+
+      Text(
+        AFFILIATION_DISCLAIMER,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+      )
     }
   }
 }

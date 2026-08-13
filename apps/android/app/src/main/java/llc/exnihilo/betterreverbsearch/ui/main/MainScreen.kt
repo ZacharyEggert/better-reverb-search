@@ -342,6 +342,13 @@ private fun Results(model: SearchViewModel, grid: Boolean) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
           )
+          Text(
+            AFFILIATION_DISCLAIMER,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 24.dp),
+          )
         }
       }
     } else {
@@ -484,3 +491,6 @@ private fun Thumbnail(url: String?, modifier: Modifier) {
 }
 
 private const val REVERB_HOME = "https://reverb.com"
+
+/** Nominative use of the Reverb mark — say plainly whose app this isn't. */
+const val AFFILIATION_DISCLAIMER = "Created by Ex Nihilo LLC. Not affiliated with Reverb.com LLC."
