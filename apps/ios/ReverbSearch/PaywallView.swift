@@ -110,6 +110,11 @@ struct PaywallView: View {
                         Link("Privacy", destination: privacy)
                     }
                     .font(.caption2)
+
+                    Text(affiliationDisclaimer)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
                 .padding()
             }
