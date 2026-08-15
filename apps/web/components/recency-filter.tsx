@@ -2,6 +2,7 @@
 
 import type { Listing } from "@better-reverb-search/reverb-api";
 import { useRef } from "react";
+import { Drawer } from "./drawer";
 
 /** Bucket width, in months. The slider steps in the same unit. */
 export const BUCKET_MONTHS = 3;
@@ -140,29 +141,15 @@ export function RecencyFilter({
   });
 
   return (
-    // <details> is the drawer: open/close, keyboard and screen-reader semantics
-    // for free. The summary keeps the selected range visible while collapsed.
-    <details
-      open
-      // Closed is pinned to exactly 2rem: h-8 with tight padding, and the
-      // padding/height only open up when the drawer does.
-      className="group h-8 overflow-hidden rounded-[var(--radius-module)] border border-[var(--color-line)] px-3 py-1 open:h-auto open:space-y-3 open:overflow-visible open:p-4"
-    >
-      {/* list-none + the webkit rule kill the default disclosure triangle in
-          every engine; the caret below is ours so it can flip on open. */}
-      <summary className="flex cursor-pointer list-none items-baseline justify-between gap-2 text-sm [&::-webkit-details-marker]:hidden">
-        <span className="text-[var(--color-muted)]">
-          Listed Date Range{" "}
-          <span aria-hidden className="inline-block group-open:rotate-180">
-            ▾
-          </span>
-        </span>
-        <span className="tnum text-[var(--color-ink)]">
+    <Drawer
+      label="Listed Date Range"
+      summary={
+        <>
           {newest === 0 ? "now" : `${newest} mo ago`} –{" "}
           {oldest >= span ? "oldest" : `${oldest} mo ago`}
-        </span>
-      </summary>
-
+        </>
+      }
+    >
       <div className="flex h-24 items-end gap-1" aria-hidden>
         {counts.map((count, i) => {
           const start = i * BUCKET_MONTHS;
@@ -225,7 +212,7 @@ export function RecencyFilter({
           {...dragProps("oldest")}
         />
       </div>
-    </details>
+    </Drawer>
   );
 }
 

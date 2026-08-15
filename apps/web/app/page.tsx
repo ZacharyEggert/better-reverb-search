@@ -15,6 +15,7 @@ import { ResultsGrid } from "@/components/results-grid";
 import { ResultsTable } from "@/components/results-table";
 import { SearchForm } from "@/components/search-form";
 import { StatsBar } from "@/components/stats-bar";
+import { matchesTerms, NO_TERMS, TermFilter, type Terms } from "@/components/term-filter";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { fromSearchParams, toSearchParams } from "@/lib/query-url";
 import { useSearch } from "@/lib/use-search";
@@ -95,6 +96,7 @@ export default function Page() {
     setQuery(DEFAULT_QUERY);
     setResultsAreSold(false);
     setRecency(undefined);
+    setTerms(NO_TERMS);
     clear();
     syncUrl(DEFAULT_QUERY, view);
   };
@@ -108,8 +110,14 @@ export default function Page() {
   const recencyRange: RecencyRange = recency
     ? [Math.min(recency[0], span[1] - BUCKET_MONTHS), Math.min(recency[1], span[1])]
     : span;
-  const visible = result ? result.listings.filter((l) => inRecencyRange(l, recencyRange)) : [];
-  const filtered = result ? result.listings.length - visible.length : 0;
+  // Title terms are a second, independent cut over the same loaded listings.
+  const [terms, setTerms] = useState<Terms>(NO_TERMS);
+  // Term filtering is a second, independent cut. The histogram deliberately
+  // stays on the full loaded set so its time axis doesn't jump as terms are typed.
+  const byTerms = result ? result.listings.filter((l) => matchesTerms(l, terms)) : [];
+  const visible = byTerms.filter((l) => inRecencyRange(l, recencyRange));
+  const hiddenByTerms = result ? result.listings.length - byTerms.length : 0;
+  const filtered = byTerms.length - visible.length;
 
   const sold = query.showOnlySold === true;
   const totalPages = result ? Math.min(result.totalPages, 50) : 0;
@@ -250,12 +258,20 @@ export default function Page() {
                 <span className="tnum">
                   showing {visible.length.toLocaleString()}
                   {filtered > 0 && ` (${filtered.toLocaleString()} outside date range)`}
+                  {hiddenByTerms > 0 && ` (${hiddenByTerms.toLocaleString()} by terms)`}
                 </span>
               ))}
           </div>
 
           {result.listings.length > 0 && (
-            <RecencyFilter listings={result.listings} range={recencyRange} onChange={setRecency} />
+            <>
+              <RecencyFilter
+                listings={result.listings}
+                range={recencyRange}
+                onChange={setRecency}
+              />
+              <TermFilter terms={terms} onChange={setTerms} hidden={hiddenByTerms} />
+            </>
           )}
 
           <StatsBar listings={visible} total={result.total} sold={resultsAreSold} />
