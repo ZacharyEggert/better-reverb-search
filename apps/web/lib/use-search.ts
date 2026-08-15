@@ -24,7 +24,8 @@ export function useSearch() {
   const [state, setState] = useState<SearchState>({ loading: false });
   const inFlight = useRef<AbortController>(null);
 
-  const run = useCallback(async (query: SearchQuery) => {
+  /** `append` keeps the previous listings and tacks the new page onto them. */
+  const run = useCallback(async (query: SearchQuery, append = false) => {
     inFlight.current?.abort();
     const controller = new AbortController();
     inFlight.current = controller;
@@ -37,12 +38,17 @@ export function useSearch() {
         apiKey: resolveApiKeyOptional(),
       });
       if (controller.signal.aborted) return;
-      setState({ result, loading: false });
+      setState((s) => ({
+        result:
+          append && s.result
+            ? { ...result, listings: [...s.result.listings, ...result.listings] }
+            : result,
+        loading: false,
+      }));
     } catch (e) {
       if (controller.signal.aborted) return;
       // RevError already carries a human-readable message and a type.
-      const message =
-        e instanceof RevError ? e.message : `Unexpected error: ${String(e)}`;
+      const message = e instanceof RevError ? e.message : `Unexpected error: ${String(e)}`;
       setState({ error: message, loading: false });
     }
   }, []);
