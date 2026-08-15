@@ -3,6 +3,14 @@
 import type { SearchQuery } from "@better-reverb-search/reverb-api";
 import { useEffect, useRef, useState } from "react";
 import { ApiKeyField } from "@/components/api-key-field";
+import {
+  BUCKET_MONTHS,
+  fullRange,
+  inRecencyRange,
+  RecencyFilter,
+  recencyBuckets,
+  type RecencyRange,
+} from "@/components/recency-filter";
 import { ResultsGrid } from "@/components/results-grid";
 import { ResultsTable } from "@/components/results-table";
 import { SearchForm } from "@/components/search-form";
@@ -72,6 +80,7 @@ export default function Page() {
   const search = (next: SearchQuery = query, page = 1) => {
     const q = { ...next, page };
     setQuery(q);
+    setRecency(undefined); // a new result set has its own date span
     setResultsAreSold(q.showOnlySold === true);
     syncUrl(q, view);
     void run(q);
@@ -85,9 +94,22 @@ export default function Page() {
   const clearAll = () => {
     setQuery(DEFAULT_QUERY);
     setResultsAreSold(false);
+    setRecency(undefined);
     clear();
     syncUrl(DEFAULT_QUERY, view);
   };
+
+  // Recency is filtered client-side over the listings already loaded — Reverb
+  // has no verified date-range param, and the histogram can only describe the
+  // sample anyway. `undefined` means "whole span", so it tracks appended pages.
+  const [recency, setRecency] = useState<RecencyRange>();
+  const buckets = result ? recencyBuckets(result.listings) : [];
+  const span = fullRange(buckets.length);
+  const recencyRange: RecencyRange = recency
+    ? [Math.min(recency[0], span[1] - BUCKET_MONTHS), Math.min(recency[1], span[1])]
+    : span;
+  const visible = result ? result.listings.filter((l) => inRecencyRange(l, recencyRange)) : [];
+  const filtered = result ? result.listings.length - visible.length : 0;
 
   const sold = query.showOnlySold === true;
   const totalPages = result ? Math.min(result.totalPages, 50) : 0;
@@ -225,18 +247,25 @@ export default function Page() {
                   </Pager>
                 </span>
               ) : (
-                <span className="tnum">showing {result.listings.length.toLocaleString()}</span>
+                <span className="tnum">
+                  showing {visible.length.toLocaleString()}
+                  {filtered > 0 && ` (${filtered.toLocaleString()} outside date range)`}
+                </span>
               ))}
           </div>
 
-          <StatsBar listings={result.listings} total={result.total} sold={resultsAreSold} />
+          {result.listings.length > 0 && (
+            <RecencyFilter listings={result.listings} range={recencyRange} onChange={setRecency} />
+          )}
 
-          {result.listings.length === 0 ? (
+          <StatsBar listings={visible} total={result.total} sold={resultsAreSold} />
+
+          {visible.length === 0 ? (
             <p className="py-12 text-center text-[var(--color-muted)]">No listings matched.</p>
           ) : view === "table" ? (
-            <ResultsTable listings={result.listings} sold={resultsAreSold} />
+            <ResultsTable listings={visible} sold={resultsAreSold} />
           ) : (
-            <ResultsGrid listings={result.listings} sold={resultsAreSold} />
+            <ResultsGrid listings={visible} sold={resultsAreSold} />
           )}
 
           {hasMore && paging !== "pages" && (
