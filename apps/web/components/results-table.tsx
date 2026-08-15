@@ -11,22 +11,14 @@ import { useMemo, useState } from "react";
 type SortKey = "title" | "price" | "year" | "condition" | "shop" | "discount";
 
 /** Worst → best, so a condition sort reads as an ascending quality ramp. */
-const CONDITION_RANK = new Map(
-  [...CONDITIONS].reverse().map((c, i) => [c, i] as const),
-);
+const CONDITION_RANK = new Map([...CONDITIONS].reverse().map((c, i) => [c, i] as const));
 
 /**
  * Dense sortable table. Sorting is client-side over the loaded page only —
  * Reverb's own `sort` param reorders the entire result set server-side, which
  * is a different (and slower) question. Both are available.
  */
-export function ResultsTable({
-  listings,
-  sold,
-}: {
-  listings: Listing[];
-  sold: boolean;
-}) {
+export function ResultsTable({ listings, sold }: { listings: Listing[]; sold: boolean }) {
   const [key, setKey] = useState<SortKey>("price");
   const [asc, setAsc] = useState(true);
 
@@ -63,9 +55,7 @@ export function ResultsTable({
                   type="button"
                   onClick={() => toggle(k)}
                   className="flex items-center gap-1 text-[var(--color-muted)] hover:text-[var(--color-ink)]"
-                  aria-sort={
-                    key === k ? (asc ? "ascending" : "descending") : "none"
-                  }
+                  aria-sort={key === k ? (asc ? "ascending" : "descending") : "none"}
                 >
                   {headerLabel}
                   <span aria-hidden className="text-[10px]">
@@ -94,9 +84,7 @@ export function ResultsTable({
                     {l.title}
                   </a>
                 </td>
-                <td className="tnum p-2 text-[var(--color-muted)]">
-                  {l.year ?? "—"}
-                </td>
+                <td className="tnum p-2 text-[var(--color-muted)]">{l.year ?? "—"}</td>
                 <td className="p-2 text-[var(--color-muted)]">
                   {l.condition?.display_name ?? "—"}
                 </td>
@@ -104,16 +92,12 @@ export function ResultsTable({
                   <td className="tnum p-2 text-[var(--color-muted)]">
                     {l.original_price?.display ?? "—"}
                     {off !== undefined && (
-                      <span className="ml-1 font-medium text-[var(--color-sale)]">
-                        −{off}%
-                      </span>
+                      <span className="ml-1 font-medium text-[var(--color-sale)]">−{off}%</span>
                     )}
                   </td>
                 )}
                 <td className="tnum p-2 font-medium">{l.price?.display}</td>
-                <td className="max-w-40 truncate p-2 text-[var(--color-muted)]">
-                  {l.shop_name}
-                </td>
+                <td className="max-w-40 truncate p-2 text-[var(--color-muted)]">{l.shop_name}</td>
               </tr>
             );
           })}

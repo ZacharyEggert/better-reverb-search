@@ -32,9 +32,7 @@ export function resolveTheme(): Theme {
   } catch {
     // localStorage can throw in sandboxed contexts; fall through to the OS.
   }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function applyTheme(theme: Theme): void {

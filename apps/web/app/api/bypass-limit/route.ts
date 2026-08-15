@@ -27,9 +27,7 @@ export async function POST(request: Request) {
   const key = await request
     .json()
     .then((b: unknown) =>
-      typeof b === "object" && b && "key" in b && typeof b.key === "string"
-        ? b.key
-        : "",
+      typeof b === "object" && b && "key" in b && typeof b.key === "string" ? b.key : "",
     )
     .catch(() => "");
 

@@ -6,11 +6,7 @@ const hits = new Map<string, number[]>();
  * Records a hit for `id`; returns retry-after seconds when it's over `limit`
  * requests per `windowMs`, otherwise undefined.
  */
-export function rateLimit(
-  id: string,
-  limit: number,
-  windowMs: number,
-): number | undefined {
+export function rateLimit(id: string, limit: number, windowMs: number): number | undefined {
   const now = Date.now();
   const cutoff = now - windowMs;
 

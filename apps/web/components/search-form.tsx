@@ -22,12 +22,7 @@ export interface SearchFormProps {
   loading: boolean;
 }
 
-export function SearchForm({
-  value,
-  onChange,
-  onSubmit,
-  loading,
-}: SearchFormProps) {
+export function SearchForm({ value, onChange, onSubmit, loading }: SearchFormProps) {
   const set = <K extends keyof SearchQuery>(key: K, v: SearchQuery[K]) =>
     onChange({ ...value, [key]: v });
 
@@ -110,9 +105,7 @@ export function SearchForm({
             id="productType"
             className={field}
             value={value.productType ?? ""}
-            onChange={(e) =>
-              set("productType", (e.target.value || undefined) as never)
-            }
+            onChange={(e) => set("productType", (e.target.value || undefined) as never)}
           >
             <option value="">All</option>
             {PRODUCT_TYPES.map((p) => (
@@ -130,9 +123,7 @@ export function SearchForm({
             id="condition"
             className={field}
             value={value.condition ?? ""}
-            onChange={(e) =>
-              set("condition", (e.target.value || undefined) as never)
-            }
+            onChange={(e) => set("condition", (e.target.value || undefined) as never)}
           >
             <option value="">Any</option>
             {CONDITION_BUCKETS.map((c) => (

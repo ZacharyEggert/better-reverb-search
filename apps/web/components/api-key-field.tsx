@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  removeApiKey,
-  resolveApiKeyOptional,
-  storeApiKey,
-} from "@better-reverb-search/reverb-api";
+import { removeApiKey, resolveApiKeyOptional, storeApiKey } from "@better-reverb-search/reverb-api";
 import { useEffect, useState } from "react";
 
 /**

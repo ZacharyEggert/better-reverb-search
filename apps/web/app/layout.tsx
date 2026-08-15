@@ -14,11 +14,7 @@ export const metadata: Metadata = {
   icons: { icon: ["/favicon.svg", "/favicon.png"], apple: "/favicon.png" },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning: the inline script sets data-theme on <html>
     // before React hydrates, so the server markup intentionally differs.

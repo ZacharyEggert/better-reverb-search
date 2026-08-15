@@ -1,24 +1,13 @@
 "use client";
 
-import {
-  discountPercent,
-  listingUrl,
-  type Listing,
-} from "@better-reverb-search/reverb-api";
+import { discountPercent, listingUrl, type Listing } from "@better-reverb-search/reverb-api";
 
-export function ResultsGrid({
-  listings,
-  sold,
-}: {
-  listings: Listing[];
-  sold: boolean;
-}) {
+export function ResultsGrid({ listings, sold }: { listings: Listing[]; sold: boolean }) {
   return (
     <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {listings.map((l) => {
         const off = discountPercent(l);
-        const photo =
-          l.photos?.[0]?._links?.thumbnail?.href ?? l._links?.photo?.href;
+        const photo = l.photos?.[0]?._links?.thumbnail?.href ?? l._links?.photo?.href;
         return (
           <li
             key={l.id}
@@ -57,9 +46,7 @@ export function ResultsGrid({
                   )}
                 </div>
                 <div className="text-xs text-[var(--color-muted)]">
-                  {[l.year, l.condition?.display_name, l.shop_name]
-                    .filter(Boolean)
-                    .join(" · ")}
+                  {[l.year, l.condition?.display_name, l.shop_name].filter(Boolean).join(" · ")}
                 </div>
               </div>
             </a>

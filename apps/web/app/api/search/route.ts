@@ -18,8 +18,10 @@ import { rateLimit } from "@/lib/rate-limit";
  */
 export async function GET(request: Request) {
   const apiKey =
-    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ||
-    request.headers.get("x-api-key")?.trim();
+    request.headers
+      .get("authorization")
+      ?.replace(/^Bearer\s+/i, "")
+      .trim() || request.headers.get("x-api-key")?.trim();
   if (!apiKey) {
     return Response.json(
       { error: "missing API key — send Authorization: Bearer <key>" },
