@@ -1,0 +1,90 @@
+name: iOS Release
+
+# Manual only: archives apps/ios on a stable-macOS runner and uploads to App Store Connect.
+# Local machine is on a macOS beta, which Apple rejects with ITMS-90111.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "CFBundleVersion (defaults to the run number)"
+        required: false
+
+jobs:
+  release:
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: apps/ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check toolchain is GM
+        run: |
+          # macos-26 image defaults to Xcode 26.6 GM; fail loudly if that ever becomes a beta.
+          xcodebuild -version
+          sw_vers
+          # Apple stamps BuildMachineOSBuild into the app; beta OS builds are rejected (ITMS-90111).
+          case "$(sw_vers -buildVersion)" in *[a-z]) echo "::error::Runner is on a beta macOS build"; exit 1;; esac
+
+      - name: Write App Store Connect API key
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s' "$ASC_KEY_P8" > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+
+      - name: Archive
+        run: |
+          xcodebuild -project ReverbSearch.xcodeproj -scheme ReverbSearch \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/ReverbSearch.xcarchive \
+            CURRENT_PROJECT_VERSION="${BUILD_NUMBER:-$GITHUB_RUN_NUMBER}" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_$ASC_KEY_ID.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            archive
+        env:
+          BUILD_NUMBER: ${{ inputs.build_number }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+
+      - name: Export
+        run: |
+          cat > build/ExportOptions.plist <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+          	<key>method</key><string>app-store-connect</string>
+          	<key>destination</key><string>export</string>
+          	<key>signingStyle</key><string>automatic</string>
+          	<key>teamID</key><string>7C3SKSW7JC</string>
+          	<key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive -archivePath build/ReverbSearch.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_$ASC_KEY_ID.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+
+      - name: Upload to App Store Connect
+        run: |
+          xcrun altool --upload-app -f build/export/ReverbSearch.ipa -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ReverbSearch-ipa
+          path: apps/ios/build/export/ReverbSearch.ipa
