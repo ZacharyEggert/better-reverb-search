@@ -13,8 +13,9 @@ android {
         applicationId = "llc.exnihilo.betterreverbsearch"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        // ponytail: CI passes VERSION_CODE/VERSION_NAME; locals get the defaults
+        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
+        versionName = System.getenv("VERSION_NAME")?.ifBlank { null } ?: "1.0"
     }
     // ponytail: unsigned local builds still work when keystore.properties is absent
     val ksFile = rootProject.file("keystore.properties")
