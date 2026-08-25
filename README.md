@@ -1,12 +1,15 @@
 # better-reverb-search
 
 pnpm monorepo. A TypeScript port of the [`reverb-cli`](../reverb-cli) Rust crates,
-plus a Next.js app that searches Reverb listings and sold comps.
+plus web, iOS, and Android apps that search Reverb listings and sold comps.
 
 ```
 packages/reverb-api   port of the reverb-api + reverb-api-cli crates (tsup → ESM + .d.ts)
 apps/web              Next.js 15 search UI, Tailwind 4, Cadence-themed
 apps/ios              SwiftUI iPhone/iPad app, same search — outside the pnpm workspace
+apps/android          Jetpack Compose app, same search — outside the pnpm workspace
+skills/               Claude skill wrapping the hosted /api/search endpoint
+.github/workflows/    manual release builds: TestFlight (iOS), Play Console (Android)
 ```
 
 ## Quick start
@@ -36,6 +39,12 @@ export REVERB_API_KEY=...   # or storeApiKey() → localStorage in the browser
 - Search active listings, or flip to **sold comps** (`show_only_sold`) to see
   what gear actually cleared for rather than what sellers are asking.
 - Filter by make, model, condition, price range, year range, and sort.
+- **Title term filter** — comma-separated blacklist/whitelist, each term a
+  case-insensitive regex. Applied to the loaded listings, client-side. A term
+  that doesn't compile is dropped and flagged rather than blanking the results.
+- **Recency histogram** with a range slider, in 3-month buckets off
+  `published_at`. Collapsed by default; the last bucket is open-ended, and
+  undated listings always pass.
 - **Price stats** over the loaded result set — min / median / max. Labelled as
   covering only the listings fetched, never the full match count, because the
   API caps at 50 pages.
@@ -44,6 +53,9 @@ export REVERB_API_KEY=...   # or storeApiKey() → localStorage in the browser
   server-side. Both are available and they answer different questions.
 - In sold mode the table gains **Ask** and **discount %** columns, computed
   from `original_price` vs `price`.
+- **Paging modes** — infinite scroll, Load more, discrete pages, or load all
+  pages (fetched serially, 500ms apart, because Reverb rate-limits). The choice
+  is remembered per browser.
 - Light/dark theme toggle, defaulting to your OS setting.
 - **Search state lives in the URL** — query, filters, page, sold mode, and
   table/grid view. Reloading re-runs the search; the link is shareable.
@@ -91,9 +103,34 @@ Listings are trimmed to the fields the UI renders — not Reverb's full payload.
 Rate limited to **5 requests per 5 seconds per key**; over that returns `429`
 with `retry-after`. The window is in-process, so it's per server instance.
 
+`POST /api/bypass-limit` takes `{ "key": "..." }` and answers
+`{ "valid": bool }` — the promo-code check the mobile apps make. Compared
+against `LIMIT_BYPASS_KEY` in constant time; unset env never validates. Rate
+limited to 5/minute per IP so the key can't be brute forced.
+
+`skills/reverb-search-api` wraps the hosted endpoint as a Claude skill.
+
 Errors come back as `{ "error": "...", "type": "api|auth|validation|schema" }`
 with `401` for auth, `400` for validation/schema, and Reverb's own status
 otherwise.
+
+## Mobile apps
+
+Both re-implement the library's search layer natively rather than sharing it,
+and both are at feature parity with the web app: filters, sold comps, title
+terms, recency histogram, paging modes, price stats.
+
+Load-all caps at 500 listings (50 per page) and then hands back a Load more
+button — a broad search would otherwise walk all 50 pages.
+
+Searches are quota'd: 5/day free, unlimited on a monthly subscription
+(StoreKit / Play Billing `unlimited_monthly`). A promo code verified against
+`POST /api/bypass-limit` raises the daily limit to 1000; only a
+server-confirmed code raises it, so an unreachable service stays at 5.
+
+Releases go out through `.github/workflows/{ios,android}-release.yml` —
+manual `workflow_dispatch`, signed, uploaded to TestFlight / the chosen Play
+track. Android `versionCode` defaults to the run number.
 
 ## iOS app
 
@@ -119,6 +156,19 @@ toggle (iOS follows the system), URL search state (no address bar), and
 client-side table sorting (Reverb's `sort` param covers it server-side). The
 pager became **Load more**, and the API key lives in the Keychain instead of
 localStorage. Pagination still caps at Reverb's 50 pages.
+
+## Android app
+
+`apps/android` in Android Studio, or `./gradlew assembleDebug`. Compose +
+Material 3, brand orange scheme (no dynamic color), min SDK per
+`build.gradle.kts`. Signing config is read from a gitignored
+`keystore.properties`.
+
+```sh
+cd apps/android
+./gradlew test              # search/query unit tests
+./gradlew connectedCheck    # quota instrumentation test, needs a device
+```
 
 ## Using the library directly
 
