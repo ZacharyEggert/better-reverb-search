@@ -17,6 +17,17 @@ final class SearchModel {
     /// Set when a search is refused for want of quota; drives the paywall sheet.
     var showPaywall = false
 
+    /// Load-all walks every page, so it asks for the biggest page Reverb allows —
+    /// fewest requests, and the per-page choice in Filters is overridden while it's on.
+    var loadAllPages = false {
+        didSet {
+            // A half-loaded result set can't switch page size mid-walk without
+            // skipping or repeating listings — restart from page 1 instead.
+            guard loadAllPages, query.perPage != SearchQuery.maxPerPage, result != nil else { return }
+            search()
+        }
+    }
+
     /// The mode the *loaded* results were fetched in — not the pending toggle,
     /// so Ask/Off never render against active listings.
     private(set) var resultsAreSold = false
@@ -47,6 +58,13 @@ final class SearchModel {
 
     var canLoadMore: Bool { currentPage < totalPages }
 
+    /// Ten pages of 50 — past that a "load all" is fetching more than anyone reads,
+    /// and most searches don't have this many. The walk stops; the button stays.
+    static let loadAllCap = 500
+
+    /// Whether the load-all walk keeps going, as opposed to handing back the button.
+    var canLoadAll: Bool { canLoadMore && loaded.count < Self.loadAllCap }
+
     func search(page: Int = 1, appending: Bool = false) {
         // Only a new search term spends quota — paging and re-running the same
         // term under different filters are free, so neither `loadMore` nor a
@@ -68,6 +86,7 @@ final class SearchModel {
         }
 
         task?.cancel()
+        if loadAllPages { query.perPage = SearchQuery.maxPerPage }
         query.page = page
         let query = query
         loading = true

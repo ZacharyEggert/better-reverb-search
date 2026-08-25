@@ -1,6 +1,8 @@
 package llc.exnihilo.betterreverbsearch.ui.main
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,13 +11,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +58,9 @@ fun RecencyFilter(
   // The stored bounds clamped to the current span, which grows as older pages are appended.
   val oldest = minOf(filters.oldestMonths ?: span, span)
   val newest = minOf(filters.newestMonths, oldest - Recency.BUCKET_MONTHS)
+  // Collapsed by default: the chart is a refinement, and the results are what the screen is for.
+  // The header still shows the window, open or shut.
+  var open by remember { mutableStateOf(false) }
 
   Card(
     Modifier.fillMaxWidth(),
@@ -55,59 +68,74 @@ fun RecencyFilter(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-      Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Label("Listed date range")
-        Label(
-          "${if (newest == 0) "now" else "$newest mo ago"} – ${if (oldest >= span) "oldest" else "$oldest mo ago"}"
-        )
-      }
-
-      val peak = maxOf(counts.max(), 1)
       Row(
-        Modifier.fillMaxWidth().height(64.dp).semantics { contentDescription = "Listing date histogram" },
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.Bottom,
+        Modifier.fillMaxWidth().clickable { open = !open },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
       ) {
-        counts.forEachIndexed { i, count ->
-          val start = i * Recency.BUCKET_MONTHS
-          val included = start >= newest && start < oldest
-          Box(
-            Modifier.weight(1f)
-              // A hair of height on empty buckets keeps the axis readable.
-              .height(maxOf(count.toFloat() / peak * 64f, 2f).dp)
-              .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
-              .background(
-                if (included) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-              )
+        Label("Listed date range")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Label(
+            "${if (newest == 0) "now" else "$newest mo ago"} – ${if (oldest >= span) "oldest" else "$oldest mo ago"}"
+          )
+          Icon(
+            if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription = if (open) "Hide date range filter" else "Show date range filter",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
       }
 
-      // Buckets are equal width, so only the ends need labelling to stay legible when narrow.
-      Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Label("now")
-        Label("$span+ mo ago")
-      }
+      AnimatedVisibility(open) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+          val peak = maxOf(counts.max(), 1)
+          Row(
+            Modifier.fillMaxWidth().height(64.dp).semantics { contentDescription = "Listing date histogram" },
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.Bottom,
+          ) {
+            counts.forEachIndexed { i, count ->
+              val start = i * Recency.BUCKET_MONTHS
+              val included = start >= newest && start < oldest
+              Box(
+                Modifier.weight(1f)
+                  // A hair of height on empty buckets keeps the axis readable.
+                  .height(maxOf(count.toFloat() / peak * 64f, 2f).dp)
+                  .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+                  .background(
+                    if (included) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                  )
+              )
+            }
+          }
 
-      // Steps are the interior bucket edges, so the window can only land on a bucket boundary.
-      RangeSlider(
-        value = newest.toFloat()..oldest.toFloat(),
-        onValueChange = { range ->
-          val from = snap(range.start, span)
-          val to = maxOf(snap(range.endInclusive, span), from + Recency.BUCKET_MONTHS)
-          onChange(
-            filters.copy(
-              newestMonths = minOf(from, span - Recency.BUCKET_MONTHS),
-              // The oldest end stays open when it sits at the span, so appended pages extend the
-              // window instead of being filtered out on arrival.
-              oldestMonths = if (to >= span) null else to,
-            )
+          // Buckets are equal width, so only the ends need labelling to stay legible when narrow.
+          Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Label("now")
+            Label("$span+ mo ago")
+          }
+
+          // Steps are the interior bucket edges, so the window can only land on a bucket boundary.
+          RangeSlider(
+            value = newest.toFloat()..oldest.toFloat(),
+            onValueChange = { range ->
+              val from = snap(range.start, span)
+              val to = maxOf(snap(range.endInclusive, span), from + Recency.BUCKET_MONTHS)
+              onChange(
+                filters.copy(
+                  newestMonths = minOf(from, span - Recency.BUCKET_MONTHS),
+                  // The oldest end stays open when it sits at the span, so appended pages extend the
+                  // window instead of being filtered out on arrival.
+                  oldestMonths = if (to >= span) null else to,
+                )
+              )
+            },
+            valueRange = 0f..span.toFloat(),
+            steps = maxOf(counts.size - 1, 0),
           )
-        },
-        valueRange = 0f..span.toFloat(),
-        steps = maxOf(counts.size - 1, 0),
-      )
+        }
+      }
     }
   }
 }

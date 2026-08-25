@@ -96,6 +96,9 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
   var dailyLimit by remember { mutableStateOf(QueryQuota.dailyLimit) }
   val subscribed by Billing.isSubscribed.collectAsStateWithLifecycle()
 
+  // Load-all owns the page size while it's the chosen mode.
+  LaunchedEffect(paging) { model.setLoadAllPages(paging == Paging.ALL) }
+
   // Re-check the stored promo code once per launch.
   LaunchedEffect(Unit) {
     if (BypassCode.refresh() == BypassCode.Check.UNREACHABLE) {
@@ -209,7 +212,7 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
   // Load-all: walk the remaining pages one at a time, with a gap — Reverb rate-limits. Each fetch
   // flips `loading`, which re-runs this effect and schedules the next; an error stops the walk.
   LaunchedEffect(paging, model.result?.currentPage, model.loading, model.errorMessage) {
-    if (paging == Paging.ALL && !model.loading && model.errorMessage == null && model.canLoadMore) {
+    if (paging == Paging.ALL && !model.loading && model.errorMessage == null && model.canLoadAll) {
       delay(ALL_PAGES_DELAY_MS)
       model.loadMore()
     }
@@ -436,12 +439,17 @@ private fun Results(model: SearchViewModel, grid: Boolean, paging: Paging) {
                   color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
               }
+            // Past the cap the walk stops and paging is manual again.
             Paging.ALL ->
-              Text(
-                "Loading page ${model.result?.currentPage?.plus(1)} of ${model.totalPages}…",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
+              if (model.canLoadAll) {
+                Text(
+                  "Loading page ${model.result?.currentPage?.plus(1)} of ${model.totalPages}…",
+                  style = MaterialTheme.typography.bodySmall,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              } else {
+                OutlinedButton(onClick = model::loadMore) { Text("Load more") }
+              }
           }
         }
       }

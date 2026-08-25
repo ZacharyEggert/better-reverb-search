@@ -48,6 +48,8 @@ struct ContentView: View {
                 // active — taking Filters with it.
                 .searchPresentationToolbarBehavior(.avoidHidingContent)
                 .onSubmit(of: .search) { model.search() }
+                // Load-all owns the page size while it's the chosen mode.
+                .onChange(of: paging, initial: true) { model.loadAllPages = paging == .all }
                 .toolbar { toolbar }
                 .sheet(isPresented: $showFilters) {
                     FiltersView(query: $model.query, filters: $model.filters) { model.search() }
@@ -211,10 +213,15 @@ struct ContentView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         case .all:
-                            Text("Loading page \(model.currentPage + 1) of \(model.totalPages)…")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
+                            // Past the cap the walk stops and paging is manual again.
+                            if model.canLoadAll {
+                                Text("Loading page \(model.currentPage + 1) of \(model.totalPages)…")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            } else {
+                                Button("Load more", action: model.loadMore).buttonStyle(.bordered)
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -226,7 +233,7 @@ struct ContentView: View {
         // Load-all: walk the remaining pages one at a time, with a gap. Each fetch moves the id,
         // which restarts this task and schedules the next; an error stops the walk.
         .task(id: "\(paging.rawValue)-\(model.currentPage)-\(model.loading)") {
-            guard paging == .all, !model.loading, model.errorMessage == nil, model.canLoadMore
+            guard paging == .all, !model.loading, model.errorMessage == nil, model.canLoadAll
             else { return }
             try? await Task.sleep(for: allPagesDelay)
             guard !Task.isCancelled else { return }

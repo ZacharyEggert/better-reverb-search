@@ -78,6 +78,11 @@ data class SearchQuery(
   val page: Int = 1,
   val perPage: Int = 24,
 ) {
+  companion object {
+    /** Reverb's ceiling — anything larger comes back as a page of 50 anyway. */
+    const val MAX_PER_PAGE = 50
+  }
+
   /**
    * snake_case wire params. Mirrors `toParams` in search.ts, including its default sort and the
    * priceMin/priceMax ordering check.

@@ -53,6 +53,19 @@ class SearchViewModel : ViewModel() {
   var showPaywall by mutableStateOf(false)
 
   /**
+   * Load-all walks every page, so it asks for the biggest page Reverb allows — fewest requests, and
+   * the per-page choice in the filter sheet is overridden while it's on.
+   */
+  fun setLoadAllPages(on: Boolean) {
+    loadAllPages = on
+    // A half-loaded result set can't switch page size mid-walk without skipping or repeating
+    // listings — restart from page 1 instead.
+    if (on && query.perPage != SearchQuery.MAX_PER_PAGE && result != null) search()
+  }
+
+  private var loadAllPages = false
+
+  /**
    * The mode the *loaded* results were fetched in — not the pending toggle, so Ask/Off never render
    * against active listings.
    */
@@ -81,6 +94,10 @@ class SearchViewModel : ViewModel() {
   val canLoadMore: Boolean
     get() = (result?.currentPage ?: 0) < totalPages
 
+  /** Whether the load-all walk keeps going, as opposed to handing back the button. */
+  val canLoadAll: Boolean
+    get() = canLoadMore && loaded.size < LOAD_ALL_CAP
+
   fun search(page: Int = 1, appending: Boolean = false) {
     // Only a new search term spends quota — paging and re-running the same term under different
     // filters are free, so neither `loadMore` nor a filter tweak can strand you mid-list.
@@ -101,7 +118,11 @@ class SearchViewModel : ViewModel() {
     }
 
     job?.cancel()
-    query = query.copy(page = page)
+    query =
+      query.copy(
+        page = page,
+        perPage = if (loadAllPages) SearchQuery.MAX_PER_PAGE else query.perPage,
+      )
     val query = query
     loading = true
     errorMessage = null
@@ -148,5 +169,11 @@ class SearchViewModel : ViewModel() {
 
   private companion object {
     const val RERUN_CAP = 10
+
+    /**
+     * Ten pages of 50 — past that a "load all" is fetching more than anyone reads, and most searches
+     * don't have this many. The walk stops; the button stays.
+     */
+    const val LOAD_ALL_CAP = 500
   }
 }

@@ -15,6 +15,10 @@ struct RecencyFilterView: View {
     /// The window at the moment a drag began — a drag moves relative to it.
     @State private var dragOrigin: (newest: Int, oldest: Int)?
 
+    /// Collapsed by default: the chart is a refinement, and the results are what
+    /// the screen is for. The header still shows the window, open or shut.
+    @State private var expanded = false
+
     private var counts: [Int] { Recency.buckets(listings) }
     private var span: Int { Recency.span(bucketCount: counts.count) }
 
@@ -29,7 +33,24 @@ struct RecencyFilterView: View {
         let counts = counts
         let (newest, oldest) = window
 
-        VStack(alignment: .leading, spacing: 6) {
+        DisclosureGroup(isExpanded: $expanded) {
+            VStack(alignment: .leading, spacing: 6) {
+                bars(counts, newest: newest, oldest: oldest)
+
+                // Buckets are equal width, so only the ends need labelling to stay
+                // legible when the chart is narrow.
+                HStack {
+                    Text("now")
+                    Spacer()
+                    Text("\(span)+ mo ago").monospacedDigit()
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+                slider(newest: newest, oldest: oldest)
+            }
+            .padding(.top, 6)
+        } label: {
             HStack {
                 Text("Listed date range").font(.caption).foregroundStyle(.secondary)
                 Spacer()
@@ -38,20 +59,6 @@ struct RecencyFilterView: View {
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
-
-            bars(counts, newest: newest, oldest: oldest)
-
-            // Buckets are equal width, so only the ends need labelling to stay
-            // legible when the chart is narrow.
-            HStack {
-                Text("now")
-                Spacer()
-                Text("\(span)+ mo ago").monospacedDigit()
-            }
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-
-            slider(newest: newest, oldest: oldest)
         }
         .padding(12)
         .background(.quaternary.opacity(0.4), in: .rect(cornerRadius: 12))
