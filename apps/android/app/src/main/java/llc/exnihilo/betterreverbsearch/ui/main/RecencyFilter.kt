@@ -87,7 +87,12 @@ fun RecencyFilter(
       }
 
       AnimatedVisibility(open) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // The slider thumbs are centred on their value, so half of each hangs past the track —
+        // inset the whole chart so neither end is clipped.
+        Column(
+          Modifier.padding(horizontal = 12.dp),
+          verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
           val peak = maxOf(counts.max(), 1)
           Row(
             Modifier.fillMaxWidth().height(64.dp).semantics { contentDescription = "Listing date histogram" },

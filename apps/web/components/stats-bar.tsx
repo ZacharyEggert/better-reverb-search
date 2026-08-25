@@ -29,10 +29,17 @@ export function StatsBar({
         <Stat label={sold ? "Highest sold" : "Highest ask"} value={money(stats.max)} />
         <Stat label="In sample" value={String(stats.count)} />
       </div>
-      {/* The API caps out at 50 pages; stats can only ever describe what we loaded. */}
+      {/* The API caps out at 50 pages, so stats usually describe a sample — but say so
+          only when it actually is one. */}
       <p className="mt-3 text-xs text-[var(--color-muted)]">
-        Computed over the {stats.count} loaded {sold ? "sold listings" : "listings"} — not all{" "}
-        {total.toLocaleString()} matches.
+        {stats.count >= total ? (
+          <>Computed over the {total.toLocaleString()} matches.</>
+        ) : (
+          <>
+            Computed over the {stats.count} loaded {sold ? "sold listings" : "listings"} — not all{" "}
+            {total.toLocaleString()} matches.
+          </>
+        )}
       </p>
     </div>
   );

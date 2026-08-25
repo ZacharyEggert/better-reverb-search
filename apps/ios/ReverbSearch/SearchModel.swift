@@ -17,6 +17,10 @@ final class SearchModel {
     /// Set when a search is refused for want of quota; drives the paywall sheet.
     var showPaywall = false
 
+    /// One-shot message for the UI to toast and clear. Set on a result too broad
+    /// to load in full — the numbers only describe what gets loaded.
+    var notice: String?
+
     /// Load-all walks every page, so it asks for the biggest page Reverb allows —
     /// fewest requests, and the per-page choice in Filters is overridden while it's on.
     var loadAllPages = false {
@@ -100,6 +104,10 @@ final class SearchModel {
                 self.loaded = appending ? self.loaded + result.listings : result.listings
                 self.resultsAreSold = query.showOnlySold
                 self.loading = false
+                if !appending, result.total > Self.loadAllCap {
+                    self.notice =
+                        "\(result.total.formatted()) matches — try a more specific search. Load all pages stops at \(Self.loadAllCap)."
+                }
             } catch is CancellationError {
                 return
             } catch {

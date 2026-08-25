@@ -50,6 +50,13 @@ struct ContentView: View {
                 .onSubmit(of: .search) { model.search() }
                 // Load-all owns the page size while it's the chosen mode.
                 .onChange(of: paging, initial: true) { model.loadAllPages = paging == .all }
+                // The model raises one-shot notices; the toast is where they land.
+                .onChange(of: model.notice) {
+                    if let notice = model.notice {
+                        toast = notice
+                        model.notice = nil
+                    }
+                }
                 .toolbar { toolbar }
                 .sheet(isPresented: $showFilters) {
                     FiltersView(query: $model.query, filters: $model.filters) { model.search() }
@@ -254,6 +261,8 @@ private struct ToastView: View {
             .multilineTextAlignment(.center)
             .padding(12)
             .background(.thinMaterial, in: .rect(cornerRadius: 12))
+            // Brand orange, so a notice reads as a notice against a list of listings.
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.accentColor, lineWidth: 2))
             .padding()
             .transition(.move(edge: .bottom).combined(with: .opacity))
     }
@@ -270,9 +279,12 @@ private struct StatsView: View {
                 HStack(spacing: 20) { cells }
                 VStack(alignment: .leading, spacing: 8) { cells }
             }
-            // The API caps at 50 pages; stats only ever describe what we loaded.
+            // The API caps at 50 pages, so stats usually describe a sample — but
+            // say so only when it actually is one.
             Text(
-                "Over the \(stats.count) loaded \(sold ? "sold listings" : "listings") — not all \(total.formatted()) matches."
+                stats.count >= total
+                    ? "Over the \(total.formatted()) matches."
+                    : "Over the \(stats.count) loaded \(sold ? "sold listings" : "listings") — not all \(total.formatted()) matches."
             )
             .font(.caption2)
             .foregroundStyle(.secondary)

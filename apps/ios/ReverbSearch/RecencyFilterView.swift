@@ -50,6 +50,9 @@ struct RecencyFilterView: View {
                 slider(newest: newest, oldest: oldest)
             }
             .padding(.top, 6)
+            // The slider thumbs are centred on their value, so half of each hangs
+            // past the track — inset the whole chart so neither end is clipped.
+            .padding(.horizontal, 12)
         } label: {
             HStack {
                 Text("Listed date range").font(.caption).foregroundStyle(.secondary)

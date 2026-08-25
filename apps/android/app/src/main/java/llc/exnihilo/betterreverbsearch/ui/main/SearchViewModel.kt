@@ -17,6 +17,7 @@ import llc.exnihilo.betterreverbsearch.data.QueryQuota
 import llc.exnihilo.betterreverbsearch.data.ReverbApi
 import llc.exnihilo.betterreverbsearch.data.SearchQuery
 import llc.exnihilo.betterreverbsearch.data.SearchResult
+import llc.exnihilo.betterreverbsearch.data.formatted
 
 /**
  * Port of `use-search.ts`: searches fire from an explicit submit, never from a query-change
@@ -51,6 +52,12 @@ class SearchViewModel : ViewModel() {
 
   /** Set when a search is refused for want of quota; drives the paywall sheet. */
   var showPaywall by mutableStateOf(false)
+
+  /**
+   * One-shot message for the UI to toast and clear. Set on a result too broad to load in full — the
+   * numbers only describe what gets loaded.
+   */
+  var notice by mutableStateOf<String?>(null)
 
   /**
    * Load-all walks every page, so it asks for the biggest page Reverb allows — fewest requests, and
@@ -135,6 +142,11 @@ class SearchViewModel : ViewModel() {
           loaded = if (appending) loaded + result.listings else result.listings
           resultsAreSold = query.showOnlySold
           loading = false
+          if (!appending && result.total > LOAD_ALL_CAP) {
+            notice =
+              "${result.total.formatted()} matches — try a more specific search. " +
+                "Load all pages stops at $LOAD_ALL_CAP."
+          }
         } catch (e: kotlinx.coroutines.CancellationException) {
           throw e
         } catch (e: Exception) {

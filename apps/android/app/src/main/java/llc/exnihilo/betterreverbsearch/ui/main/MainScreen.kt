@@ -1,6 +1,7 @@
 package llc.exnihilo.betterreverbsearch.ui.main
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -80,6 +82,7 @@ import llc.exnihilo.betterreverbsearch.data.PriceStats
 import llc.exnihilo.betterreverbsearch.data.Prefs
 import llc.exnihilo.betterreverbsearch.data.QueryQuota
 import llc.exnihilo.betterreverbsearch.data.formatted
+import llc.exnihilo.betterreverbsearch.theme.BrandOrange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +98,14 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
   // itself is an object with nothing to observe.
   var dailyLimit by remember { mutableStateOf(QueryQuota.dailyLimit) }
   val subscribed by Billing.isSubscribed.collectAsStateWithLifecycle()
+
+  // The model raises one-shot notices; the toast is where they land.
+  LaunchedEffect(model.notice) {
+    model.notice?.let {
+      toast = it
+      model.notice = null
+    }
+  }
 
   // Load-all owns the page size while it's the chosen mode.
   LaunchedEffect(paging) { model.setLoadAllPages(paging == Paging.ALL) }
@@ -195,7 +206,12 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
     },
     snackbarHost = {
       toast?.let {
-        Snackbar(modifier = Modifier.padding(16.dp)) { Text(it, textAlign = TextAlign.Center) }
+        // Brand orange, so a notice reads as a notice against a list of listings.
+        Snackbar(
+          modifier = Modifier.padding(16.dp).border(2.dp, BrandOrange, SnackbarDefaults.shape)
+        ) {
+          Text(it, textAlign = TextAlign.Center)
+        }
       }
     },
   ) { padding ->
@@ -471,9 +487,12 @@ private fun StatsCard(stats: PriceStats, total: Int, sold: Boolean) {
         StatCell(if (sold) "Median sold" else "Median ask", stats.format(stats.median), true)
         StatCell(if (sold) "Highest sold" else "Highest ask", stats.format(stats.max), false)
       }
-      // The API caps at 50 pages; stats only ever describe what we loaded.
+      // The API caps at 50 pages, so stats usually describe a sample — but say so only when it
+      // actually is one.
       Text(
-        "Over the ${stats.count} loaded ${if (sold) "sold listings" else "listings"} — not all ${total.formatted()} matches.",
+        if (stats.count >= total) "Over the ${total.formatted()} matches."
+        else
+          "Over the ${stats.count} loaded ${if (sold) "sold listings" else "listings"} — not all ${total.formatted()} matches.",
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
