@@ -50,9 +50,12 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Bundle release
-        run: ./gradlew --no-daemon bundleRelease
+        # GitHub expressions have no arithmetic, so the +100 offset happens here.
+        run: |
+          export VERSION_CODE="${VERSION_CODE:-$((GITHUB_RUN_NUMBER + 100))}"
+          ./gradlew --no-daemon bundleRelease
         env:
-          VERSION_CODE: ${{ inputs.version_code || github.run_number + 100 }}
+          VERSION_CODE: ${{ inputs.version_code }}
           VERSION_NAME: ${{ inputs.version_name }}
 
       - uses: r0adkll/upload-google-play@v1
