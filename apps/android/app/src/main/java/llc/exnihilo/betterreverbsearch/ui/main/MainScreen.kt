@@ -197,7 +197,9 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
   if (showFilters) {
     FiltersSheet(
       query = model.query,
+      filters = model.filters,
       onDismiss = { showFilters = false },
+      onFilters = { model.filters = it },
       onApply = {
         model.query = it
         showFilters = false
@@ -310,6 +312,15 @@ private fun Results(model: SearchViewModel, grid: Boolean) {
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
           }
+          // Client-side cuts are invisible otherwise — a filter quietly eating half the page
+          // would look like a bad search.
+          if (model.hiddenCount > 0) {
+            Text(
+              "showing ${model.listings.size.formatted()} — ${model.hiddenCount.formatted()} hidden by filters",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
         }
       }
       model.stats?.let { stats ->
@@ -337,6 +348,8 @@ private fun Results(model: SearchViewModel, grid: Boolean) {
           Text(
             if (result == null)
               "Search active listings, or flip to sold comps to see what gear actually clears for."
+            else if (model.hiddenCount > 0)
+              "${model.hiddenCount.formatted()} loaded listings are hidden by the date range or title terms."
             else "Try loosening a filter.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -85,7 +85,57 @@ class SearchTest {
     assertNull(PriceStats.of(emptyList()))
   }
 
+  @Test
+  fun conditionBucketsAreSearchFilterValuesAlongsideTheGrades() {
+    assertEquals(listOf("used", "new", "b-stock"), Condition.buckets.map { it.wire })
+    assertEquals(Condition.entries.size, Condition.buckets.size + Condition.grades.size)
+    assertEquals("b-stock", params(SearchQuery(condition = Condition.B_STOCK))["condition"])
+  }
+
+  @Test
+  fun recencyFilterBoundsTheLoadedListings() {
+    val f = ListingFilters()
+    assertEquals(false, f.isActive)
+    for (l in listOf(RECENT, OLD, UNDATED)) assertEquals(true, f.matches(l, NOW))
+
+    // Newest bound drops anything more recent than it; the oldest bound is exclusive.
+    val newest = ListingFilters(newestMonths = 6)
+    assertEquals(false, newest.matches(RECENT, NOW))
+    assertEquals(true, newest.matches(OLD, NOW))
+    // An undated listing always passes the date cut rather than vanishing silently.
+    assertEquals(true, newest.matches(UNDATED, NOW))
+
+    val oldest = ListingFilters(oldestMonths = 12)
+    assertEquals(true, oldest.matches(RECENT, NOW))
+    assertEquals(false, oldest.matches(OLD, NOW))
+  }
+
+  @Test
+  fun blacklistWinsOverWhitelistAndBadRegexesAreDropped() {
+    ListingFilters(blacklist = "relic, mini").let {
+      assertEquals(true, it.matches(RECENT, NOW))
+      assertEquals(false, it.matches(OLD, NOW))
+    }
+    ListingFilters(whitelist = "strat(ocaster)?").let {
+      assertEquals(true, it.matches(RECENT, NOW))
+      assertEquals(false, it.matches(OLD, NOW))
+    }
+    assertEquals(false, ListingFilters(blacklist = "fender", whitelist = "strat").matches(RECENT, NOW))
+
+    // A half-typed regex is dropped, not thrown — and surfaced rather than silent.
+    assertEquals(true, ListingFilters(blacklist = "(fender").matches(RECENT, NOW))
+    assertEquals(listOf("(fender"), ListingFilters.invalidTerms("(fender, relic"))
+  }
+
   private companion object {
+    /** 2023-11-14T22:13:20Z. */
+    const val NOW = 1_700_000_000_000L
+    val RECENT = // ~1.5 months old
+      Listing(id = 1, title = "Fender Stratocaster", publishedAt = "2023-10-01T00:00:00Z")
+    val OLD = // ~23 months old
+      Listing(id = 2, title = "Fender Telecaster Relic", publishedAt = "2022-01-01T00:00:00Z")
+    val UNDATED = Listing(id = 3, title = "Gibson Les Paul")
+
     const val JSON =
       """
 {

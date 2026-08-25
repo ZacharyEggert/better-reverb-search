@@ -2,6 +2,9 @@ import SwiftUI
 
 struct FiltersView: View {
     @Binding var query: SearchQuery
+    /// Client-side cuts. They apply to the listings already loaded, so unlike
+    /// `query` they take effect the moment they change — no re-search needed.
+    @Binding var filters: ListingFilters
     var onApply: () -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -17,7 +20,11 @@ struct FiltersView: View {
                     }
                     Picker("Condition", selection: $query.condition) {
                         Text("Any").tag(Condition?.none)
-                        ForEach(Condition.allCases) { Text($0.label).tag(Condition?.some($0)) }
+                        ForEach(Condition.buckets) { Text($0.label).tag(Condition?.some($0)) }
+                        // Grades are a slice of `used`, so they read as a sub-list.
+                        Section("Used — by grade") {
+                            ForEach(Condition.grades) { Text($0.label).tag(Condition?.some($0)) }
+                        }
                     }
                     Picker("Sort", selection: $query.sort) {
                         Text("Newest first").tag(Sort?.none)
@@ -35,9 +42,43 @@ struct FiltersView: View {
                     number("Max", $query.yearMax)
                 }
 
+                Section("Listed date range") {
+                    Picker("Newest", selection: $filters.newestMonths) {
+                        ForEach(ListingFilters.monthOptions, id: \.self) { months in
+                            Text(months == 0 ? "now" : "\(months) mo ago").tag(months)
+                        }
+                    }
+                    Picker("Oldest", selection: $filters.oldestMonths) {
+                        Text("any").tag(Int?.none)
+                        ForEach(ListingFilters.monthOptions.dropFirst(), id: \.self) { months in
+                            Text("\(months) mo ago").tag(Int?.some(months))
+                        }
+                    }
+                }
+
+                Section {
+                    terms("Blacklist — hide titles matching", "relic, mini, copy", $filters.blacklist)
+                    terms("Whitelist — keep only titles matching", "strat(ocaster)?, tele", $filters.whitelist)
+                } header: {
+                    Text("Blacklist / whitelist")
+                } footer: {
+                    let bad =
+                        ListingFilters.invalidTerms(filters.blacklist)
+                        + ListingFilters.invalidTerms(filters.whitelist)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(
+                            "Comma-separated, matched against the listing title as case-insensitive regexes."
+                        )
+                        if !bad.isEmpty {
+                            Text("Ignored (invalid regex): \(bad.joined(separator: ", "))")
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+
                 Section {
                     Picker("Per page", selection: $query.perPage) {
-                        ForEach([12, 24, 50, 90], id: \.self) { Text("\($0)") }
+                        ForEach([12, 24, 50], id: \.self) { Text("\($0)") }
                     }
                     Toggle("Sold comps", isOn: $query.showOnlySold)
                 }
@@ -55,6 +96,18 @@ struct FiltersView: View {
                     Button("Close") { dismiss() }
                 }
             }
+        }
+    }
+
+    private func terms(
+        _ label: String, _ placeholder: String, _ value: Binding<String>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            TextField(placeholder, text: value, axis: .vertical)
+                .lineLimit(1...3)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
         }
     }
 

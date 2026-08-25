@@ -1,6 +1,7 @@
 package llc.exnihilo.betterreverbsearch.ui.main
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,14 +37,28 @@ import kotlinx.coroutines.launch
 import llc.exnihilo.betterreverbsearch.data.ApiKeyStore
 import llc.exnihilo.betterreverbsearch.data.BypassCode
 import llc.exnihilo.betterreverbsearch.data.Condition
+import llc.exnihilo.betterreverbsearch.data.ListingFilters
 import llc.exnihilo.betterreverbsearch.data.ProductType
 import llc.exnihilo.betterreverbsearch.data.SearchQuery
 import llc.exnihilo.betterreverbsearch.data.Sort
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FiltersSheet(query: SearchQuery, onDismiss: () -> Unit, onApply: (SearchQuery) -> Unit) {
+fun FiltersSheet(
+  query: SearchQuery,
+  filters: ListingFilters,
+  onDismiss: () -> Unit,
+  /** Client-side cuts apply to the listings already loaded — no re-search needed. */
+  onFilters: (ListingFilters) -> Unit,
+  onApply: (SearchQuery) -> Unit,
+) {
   var draft by remember { mutableStateOf(query) }
+  var cuts by remember { mutableStateOf(filters) }
+
+  fun setCuts(next: ListingFilters) {
+    cuts = next
+    onFilters(next)
+  }
 
   ModalBottomSheet(onDismissRequest = onDismiss) {
     Column(
@@ -70,7 +85,14 @@ fun FiltersSheet(query: SearchQuery, onDismiss: () -> Unit, onApply: (SearchQuer
       Dropdown("Category", draft.productType, ProductType.entries, "All", { it.label }) {
         draft = draft.copy(productType = it)
       }
-      Dropdown("Condition", draft.condition, Condition.entries, "Any", { it.label }) {
+      // Buckets first, then the grades — grades are a slice of `used`, not a parallel axis.
+      Dropdown(
+        "Condition",
+        draft.condition,
+        Condition.buckets + Condition.grades,
+        "Any",
+        { if (it in Condition.buckets) it.label else "used — ${it.label}" },
+      ) {
         draft = draft.copy(condition = it)
       }
       Dropdown("Sort", draft.sort, Sort.entries, "Newest first", { it.label }) {
@@ -89,8 +111,64 @@ fun FiltersSheet(query: SearchQuery, onDismiss: () -> Unit, onApply: (SearchQuer
         NumberField("Max", draft.yearMax, Modifier.weight(1f)) { draft = draft.copy(yearMax = it) }
       }
 
-      Dropdown("Per page", draft.perPage, listOf(12, 24, 50, 90), "24", { it.toString() }) {
+      Dropdown("Per page", draft.perPage, listOf(12, 24, 50), "24", { it.toString() }) {
         draft = draft.copy(perPage = it ?: 24)
+      }
+
+      Text("Listed date range", style = MaterialTheme.typography.titleSmall)
+      Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(Modifier.weight(1f)) {
+          Dropdown(
+            "Newest",
+            // 0 is the "no bound" end of the ladder, so it reads as the none option.
+            cuts.newestMonths.takeIf { it > 0 },
+            ListingFilters.MONTH_OPTIONS.drop(1),
+            "now",
+            { monthLabel(it) },
+          ) {
+            setCuts(cuts.copy(newestMonths = it ?: 0))
+          }
+        }
+        Box(Modifier.weight(1f)) {
+          Dropdown(
+            "Oldest",
+            cuts.oldestMonths,
+            ListingFilters.MONTH_OPTIONS.drop(1),
+            "any",
+            { monthLabel(it) },
+          ) {
+            setCuts(cuts.copy(oldestMonths = it))
+          }
+        }
+      }
+
+      Text("Blacklist / whitelist", style = MaterialTheme.typography.titleSmall)
+      OutlinedTextField(
+        value = cuts.blacklist,
+        onValueChange = { setCuts(cuts.copy(blacklist = it)) },
+        label = { Text("Hide titles matching") },
+        placeholder = { Text("relic, mini, copy") },
+        modifier = Modifier.fillMaxWidth(),
+      )
+      OutlinedTextField(
+        value = cuts.whitelist,
+        onValueChange = { setCuts(cuts.copy(whitelist = it)) },
+        label = { Text("Keep only titles matching") },
+        placeholder = { Text("strat(ocaster)?, tele") },
+        modifier = Modifier.fillMaxWidth(),
+      )
+      Text(
+        "Comma-separated, matched against the listing title as case-insensitive regexes.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      val bad = ListingFilters.invalidTerms(cuts.blacklist) + ListingFilters.invalidTerms(cuts.whitelist)
+      if (bad.isNotEmpty()) {
+        Text(
+          "Ignored (invalid regex): ${bad.joinToString(", ")}",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.error,
+        )
       }
 
       Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -154,6 +232,8 @@ private fun <T> Dropdown(
     }
   }
 }
+
+private fun monthLabel(months: Int) = "$months mo ago"
 
 @Composable
 private fun NumberField(label: String, value: Int?, modifier: Modifier, onChange: (Int?) -> Unit) {

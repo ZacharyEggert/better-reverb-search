@@ -219,7 +219,7 @@ export function SearchForm({ value, onChange, onSubmit, loading }: SearchFormPro
             value={value.perPage ?? 24}
             onChange={(e) => set("perPage", Number(e.target.value))}
           >
-            {[12, 24, 50, 90].map((n) => (
+            {[12, 24, 50].map((n) => (
               <option key={n} value={n}>
                 {n}
               </option>

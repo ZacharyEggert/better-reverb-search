@@ -7,7 +7,10 @@ import Foundation
 @Observable
 final class SearchModel {
     var query = SearchQuery()
-    var listings: [Listing] = []
+    /// Client-side cuts over the loaded listings — see `ListingFilters`.
+    var filters = ListingFilters()
+    /// Everything fetched so far, before `filters`.
+    private(set) var loaded: [Listing] = []
     var result: SearchResult?
     var errorMessage: String?
     var loading = false
@@ -28,6 +31,13 @@ final class SearchModel {
     private var rerunsLeft = 0
     private static let rerunCap = 10
 
+    /// What the UI shows: the loaded listings minus the client-side cuts.
+    var listings: [Listing] { loaded.filter { filters.matches($0) } }
+
+    /// How many loaded listings the filters are currently removing.
+    var hiddenCount: Int { loaded.count - listings.count }
+
+    /// Stats describe what's on screen, so they move with the filters.
     var stats: PriceStats? { PriceStats(listings) }
 
     /// Reverb caps at 50 pages regardless of `total`.
@@ -67,7 +77,7 @@ final class SearchModel {
                 let result = try await ReverbAPI.search(query, apiKey: APIKeyStore.load())
                 guard !Task.isCancelled else { return }
                 self.result = result
-                self.listings = appending ? self.listings + result.listings : result.listings
+                self.loaded = appending ? self.loaded + result.listings : result.listings
                 self.resultsAreSold = query.showOnlySold
                 self.loading = false
             } catch is CancellationError {
@@ -90,7 +100,8 @@ final class SearchModel {
     func clear() {
         task?.cancel()
         query = SearchQuery()
-        listings = []
+        filters = ListingFilters()
+        loaded = []
         result = nil
         errorMessage = nil
         loading = false

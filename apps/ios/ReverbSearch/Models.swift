@@ -6,12 +6,23 @@ import Foundation
 // *unfiltered* set) and misroutes others, so a typo looks like a real result.
 
 enum Condition: String, CaseIterable, Identifiable {
+    // Coarse buckets — a different axis from the seven grades below rather than
+    // more members of it: `used` and `new` split the whole result set, while
+    // `excellent` is a slice of `used`. Valid as a search filter only; a
+    // listing's own `condition.slug` is always a grade.
+    case used, new
+    case bStock = "b-stock"
     case mint, excellent
     case veryGood = "very-good"
     case good, fair, poor
     case nonFunctioning = "non-functioning"
     var id: String { rawValue }
     var label: String { rawValue.replacingOccurrences(of: "-", with: " ") }
+
+    static let buckets: [Condition] = [.used, .new, .bStock]
+    static let grades: [Condition] = [
+        .mint, .excellent, .veryGood, .good, .fair, .poor, .nonFunctioning,
+    ]
 }
 
 enum ProductType: String, CaseIterable, Identifiable {
@@ -128,12 +139,18 @@ struct Listing: Decodable, Identifiable, Hashable {
     var shopName: String?
     var photos: [Photo]?
     var links: HALLinks?
+    /// When the listing went live; `createdAt` is the fallback for drafts
+    /// Reverb never published.
+    var publishedAt: String?
+    var createdAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, title, make, model, year, condition, price, state, photos
         case originalPrice = "original_price"
         case shopName = "shop_name"
         case links = "_links"
+        case publishedAt = "published_at"
+        case createdAt = "created_at"
     }
 
     var thumbnailURL: URL? {
@@ -161,6 +178,29 @@ struct Listing: Decodable, Identifiable, Hashable {
         guard let ask = originalPrice?.amountCents, let sold = price?.amountCents,
               ask > 0, sold <= ask else { return nil }
         return Int((Double(ask - sold) / Double(ask) * 100).rounded())
+    }
+
+    /// Months since the listing went live — the recency a shopper cares about.
+    /// nil when Reverb omitted or garbled both timestamps.
+    func monthsAgo(now: Date = .now) -> Double? {
+        guard let raw = publishedAt ?? createdAt, let date = Self.parseDate(raw) else { return nil }
+        return max(0, now.timeIntervalSince(date) / Listing.secondsPerMonth)
+    }
+
+    /// Average month. The month ladder is a coarse cut — calendar-exact edges buy nothing.
+    private static let secondsPerMonth = 30.44 * 24 * 60 * 60
+
+    // Configured once and only ever read; Foundation's date formatters are
+    // documented thread-safe for parsing, which is all this does.
+    nonisolated(unsafe) private static let formatters: [ISO8601DateFormatter] = {
+        let plain = ISO8601DateFormatter()
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return [plain, fractional]
+    }()
+
+    private static func parseDate(_ raw: String) -> Date? {
+        formatters.lazy.compactMap { $0.date(from: raw) }.first
     }
 
     var subtitle: String {
@@ -202,6 +242,67 @@ struct SearchResult {
     /// a filter did something.
     var humanizedParams = ""
     var listings: [Listing] = []
+}
+
+// MARK: - Client-side filters
+
+/// Cuts applied to the listings already loaded, not to the query. Port of the
+/// web app's recency + blacklist/whitelist filters.
+///
+/// ponytail: a fixed month ladder instead of the web's histogram-derived span —
+/// same semantics, no chart to build. Swap in a computed span if the ladder
+/// ever misses the data.
+struct ListingFilters: Equatable {
+    /// Bounds in months ago. `oldestMonths == nil` means "no older bound".
+    var newestMonths = 0
+    var oldestMonths: Int?
+    /// Comma-separated regexes. Titles matching any blacklist term are dropped;
+    /// a non-empty whitelist drops titles matching none of its terms.
+    var blacklist = ""
+    var whitelist = ""
+
+    /// The steps offered for either bound.
+    static let monthOptions = [0, 3, 6, 12, 18, 24, 36]
+
+    var isActive: Bool { self != ListingFilters() }
+
+    /// Undated listings pass the date cut: dropping one because Reverb omitted a
+    /// timestamp would be a silent data loss the user can't see or undo.
+    func matches(_ listing: Listing, now: Date = .now) -> Bool {
+        if let months = listing.monthsAgo(now: now) {
+            if months < Double(newestMonths) { return false }
+            if let oldest = oldestMonths, months >= Double(oldest) { return false }
+        }
+        let title = listing.title
+        // Blacklist wins over whitelist: an explicitly excluded title stays excluded.
+        if Self.regexes(blacklist).contains(where: { $0.matches(title) }) { return false }
+        let white = Self.regexes(whitelist)
+        return white.isEmpty || white.contains { $0.matches(title) }
+    }
+
+    /// Split on commas, trim, drop blanks. A term that doesn't compile is dropped
+    /// rather than thrown — the user is typing, and a half-written `(fender`
+    /// shouldn't blank the results.
+    static func regexes(_ input: String) -> [NSRegularExpression] {
+        terms(input).compactMap { try? NSRegularExpression(pattern: $0, options: .caseInsensitive) }
+    }
+
+    /// Terms that were typed but don't compile — surfaced so a typo isn't silent.
+    static func invalidTerms(_ input: String) -> [String] {
+        terms(input).filter { (try? NSRegularExpression(pattern: $0)) == nil }
+    }
+
+    private static func terms(_ input: String) -> [String] {
+        input.split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+}
+
+extension NSRegularExpression {
+    fileprivate func matches(_ s: String) -> Bool {
+        firstMatch(in: s, range: NSRange(s.startIndex..., in: s)) != nil
+    }
 }
 
 // MARK: - Stats

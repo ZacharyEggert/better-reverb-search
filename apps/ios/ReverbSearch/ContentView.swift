@@ -32,7 +32,7 @@ struct ContentView: View {
                 .onSubmit(of: .search) { model.search() }
                 .toolbar { toolbar }
                 .sheet(isPresented: $showFilters) {
-                    FiltersView(query: $model.query) { model.search() }
+                    FiltersView(query: $model.query, filters: $model.filters) { model.search() }
                 }
                 .sheet(isPresented: $showAPIKey) { APIKeyView() }
                 // Code entered or cleared — the limit may have moved.
@@ -125,6 +125,15 @@ struct ContentView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        // Client-side cuts are invisible otherwise — a filter
+                        // quietly eating half the page would look like a bad search.
+                        if model.hiddenCount > 0 {
+                            Text(
+                                "showing \(model.listings.count.formatted()) — \(model.hiddenCount.formatted()) hidden by filters"
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
                     }
 
                     if let stats = model.stats {
@@ -139,7 +148,9 @@ struct ContentView: View {
                         description: Text(
                             model.result == nil
                                 ? "Search active listings, or flip to sold comps to see what gear actually clears for."
-                                : "Try loosening a filter."))
+                                : model.hiddenCount > 0
+                                    ? "\(model.hiddenCount.formatted()) loaded listings are hidden by the date range or title terms."
+                                    : "Try loosening a filter."))
                         .padding(.top, 40)
                     Text(affiliationDisclaimer)
                         .font(.caption2)

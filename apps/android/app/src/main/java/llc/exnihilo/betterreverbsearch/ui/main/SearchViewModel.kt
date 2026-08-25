@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import llc.exnihilo.betterreverbsearch.data.ApiKeyStore
 import llc.exnihilo.betterreverbsearch.data.Billing
 import llc.exnihilo.betterreverbsearch.data.Listing
+import llc.exnihilo.betterreverbsearch.data.ListingFilters
 import llc.exnihilo.betterreverbsearch.data.PriceStats
 import llc.exnihilo.betterreverbsearch.data.QueryQuota
 import llc.exnihilo.betterreverbsearch.data.ReverbApi
@@ -23,8 +24,21 @@ import llc.exnihilo.betterreverbsearch.data.SearchResult
  */
 class SearchViewModel : ViewModel() {
   var query by mutableStateOf(SearchQuery())
-  var listings by mutableStateOf<List<Listing>>(emptyList())
+
+  /** Client-side cuts over the loaded listings — see [ListingFilters]. */
+  var filters by mutableStateOf(ListingFilters())
+
+  /** Everything fetched so far, before [filters]. */
+  var loaded by mutableStateOf<List<Listing>>(emptyList())
     private set
+
+  /** What the UI shows: the loaded listings minus the client-side cuts. */
+  val listings: List<Listing>
+    get() = loaded.filter { filters.matches(it) }
+
+  /** How many loaded listings the filters are currently removing. */
+  val hiddenCount: Int
+    get() = loaded.size - listings.size
 
   var result by mutableStateOf<SearchResult?>(null)
     private set
@@ -56,6 +70,7 @@ class SearchViewModel : ViewModel() {
   /** Free re-runs left on [chargedTerm], so filters can't be toggled forever on one paid search. */
   private var rerunsLeft = 0
 
+  /** Stats describe what's on screen, so they move with the filters. */
   val stats: PriceStats?
     get() = PriceStats.of(listings)
 
@@ -93,7 +108,7 @@ class SearchViewModel : ViewModel() {
         try {
           val result = ReverbApi.search(query, ApiKeyStore.load())
           this@SearchViewModel.result = result
-          listings = if (appending) listings + result.listings else result.listings
+          loaded = if (appending) loaded + result.listings else result.listings
           resultsAreSold = query.showOnlySold
           loading = false
         } catch (e: kotlinx.coroutines.CancellationException) {
@@ -118,7 +133,8 @@ class SearchViewModel : ViewModel() {
   fun clear() {
     job?.cancel()
     query = SearchQuery()
-    listings = emptyList()
+    filters = ListingFilters()
+    loaded = emptyList()
     result = null
     errorMessage = null
     loading = false

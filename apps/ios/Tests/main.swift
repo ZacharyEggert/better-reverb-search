@@ -82,6 +82,48 @@ let stats = PriceStats(listings)!
 assert(stats.count == 2 && stats.min == 5000 && stats.median == 7000 && stats.max == 9000)
 assert(PriceStats([]) == nil)
 
+// Client-side filters: recency ladder + blacklist/whitelist over titles.
+func listing(_ title: String, published: String?) -> Listing {
+    let dated = published.map { ", \"published_at\": \"\($0)\"" } ?? ""
+    let raw = "{ \"id\": 1, \"title\": \"\(title)\"\(dated) }"
+    return try! JSONDecoder().decode(Listing.self, from: Data(raw.utf8))
+}
+
+let now = Date(timeIntervalSince1970: 1_700_000_000)
+let recent = listing("Fender Stratocaster", published: "2023-10-01T00:00:00Z")  // ~1.5 mo
+let old = listing("Fender Telecaster Relic", published: "2022-01-01T00:00:00Z")  // ~23 mo
+let undated = listing("Gibson Les Paul", published: nil)
+
+var f = ListingFilters()
+assert(!f.isActive)
+assert([recent, old, undated].allSatisfy { f.matches($0, now: now) })
+
+// Newest bound drops anything more recent than it; the oldest bound is exclusive.
+f.newestMonths = 6
+assert(!f.matches(recent, now: now) && f.matches(old, now: now))
+// An undated listing always passes the date cut rather than vanishing silently.
+assert(f.matches(undated, now: now))
+f = ListingFilters(newestMonths: 0, oldestMonths: 12)
+assert(f.matches(recent, now: now) && !f.matches(old, now: now))
+
+// Blacklist wins over whitelist; both are case-insensitive regexes.
+f = ListingFilters(blacklist: "relic, mini")
+assert(f.matches(recent, now: now) && !f.matches(old, now: now))
+f = ListingFilters(whitelist: "strat(ocaster)?")
+assert(f.matches(recent, now: now) && !f.matches(old, now: now))
+f = ListingFilters(blacklist: "fender", whitelist: "strat")
+assert(!f.matches(recent, now: now))
+
+// A half-typed regex is dropped, not thrown — and surfaced rather than silent.
+f = ListingFilters(blacklist: "(fender")
+assert(f.matches(recent, now: now))
+assert(ListingFilters.invalidTerms("(fender, relic") == ["(fender"])
+
+// Buckets are search-filter values alongside the seven grades.
+assert(Condition.buckets.map(\.rawValue) == ["used", "new", "b-stock"])
+assert(Condition.allCases.count == Condition.buckets.count + Condition.grades.count)
+assert(params(SearchQuery(condition: .bStock))["condition"] == "b-stock")
+
 // Free-tier quota: counts down, clamps at zero, and a stale day starts over.
 UserDefaults.standard.removeObject(forKey: "quota")
 assert(QueryQuota.remaining == QueryQuota.dailyLimit)
