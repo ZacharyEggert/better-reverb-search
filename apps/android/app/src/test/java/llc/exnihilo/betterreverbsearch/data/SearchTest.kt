@@ -127,6 +127,20 @@ class SearchTest {
     assertEquals(listOf("(fender"), ListingFilters.invalidTerms("(fender, relic"))
   }
 
+  @Test
+  fun histogramBucketsTheLoadedListings() {
+    // 3-month buckets, oldest listing setting the last index; undated listings aren't plotted.
+    val counts = Recency.buckets(listOf(RECENT, RECENT, OLD, UNDATED), NOW)
+    assertEquals(8, counts.size) // OLD is ~22.6 mo => bucket 7
+    assertEquals(2, counts[0])
+    assertEquals(1, counts[7])
+    assertEquals(3, counts.sum())
+    assertEquals(24, Recency.span(counts.size))
+    // An empty result still has a span to drag over rather than a zero-width track.
+    assertEquals(listOf(0), Recency.buckets(emptyList(), NOW))
+    assertEquals(3, Recency.span(1))
+  }
+
   private companion object {
     /** 2023-11-14T22:13:20Z. */
     const val NOW = 1_700_000_000_000L

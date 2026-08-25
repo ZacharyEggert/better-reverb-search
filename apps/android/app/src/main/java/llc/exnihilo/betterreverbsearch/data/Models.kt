@@ -196,12 +196,13 @@ private fun parseIso(raw: String): Long? =
 /**
  * Cuts applied to the listings already loaded, not to the query. Port of the web app's recency +
  * blacklist/whitelist filters.
- *
- * ponytail: a fixed month ladder instead of the web's histogram-derived span — same semantics, no
- * chart to build. Swap in a computed span if the ladder ever misses the data.
  */
 data class ListingFilters(
-  /** Bounds in months ago. A null [oldestMonths] means "no older bound". */
+  /**
+   * Bounds in months ago, both multiples of [Recency.BUCKET_MONTHS]. A null [oldestMonths] means "no
+   * older bound", so it keeps tracking the span as older pages are appended rather than clipping
+   * them out.
+   */
   val newestMonths: Int = 0,
   val oldestMonths: Int? = null,
   /**
@@ -231,9 +232,6 @@ data class ListingFilters(
   }
 
   companion object {
-    /** The steps offered for either bound. */
-    val MONTH_OPTIONS = listOf(0, 3, 6, 12, 18, 24, 36)
-
     /**
      * Split on commas, trim, drop blanks. A term that doesn't compile is dropped rather than thrown
      * — the user is typing, and a half-written `(fender` shouldn't blank the results.
@@ -247,6 +245,26 @@ data class ListingFilters(
 
     private fun terms(input: String) = input.split(',').map(String::trim).filter(String::isNotEmpty)
   }
+}
+
+/** The date histogram behind the range slider. Port of `recency-filter.tsx`. */
+object Recency {
+  /** Bucket width, in months. The slider steps in the same unit. */
+  const val BUCKET_MONTHS = 3
+
+  /**
+   * Counts per bucket, oldest listing setting the last index. The final bucket is open-ended, so
+   * nothing falls off the end of the chart.
+   */
+  fun buckets(listings: List<Listing>, now: Long = System.currentTimeMillis()): List<Int> {
+    val indices = listings.mapNotNull { it.monthsAgo(now) }.map { (it / BUCKET_MONTHS).toInt() }
+    val counts = MutableList((indices.maxOrNull() ?: 0) + 1) { 0 }
+    for (i in indices) counts[i]++
+    return counts
+  }
+
+  /** Full span covering every bucket — the "no filter" range. */
+  fun span(bucketCount: Int) = maxOf(bucketCount, 1) * BUCKET_MONTHS
 }
 
 /**

@@ -18,11 +18,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
@@ -51,6 +53,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,6 +90,7 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
   var showMenu by remember { mutableStateOf(false) }
   var toast by remember { mutableStateOf<String?>(null) }
   var grid by remember { mutableStateOf(Prefs.gridView) }
+  var paging by remember { mutableStateOf(Paging.stored()) }
   // Mirrors QueryQuota.dailyLimit so a promo code taking effect re-renders the count — the quota
   // itself is an object with nothing to observe.
   var dailyLimit by remember { mutableStateOf(QueryQuota.dailyLimit) }
@@ -140,6 +144,21 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
                   },
                 )
               }
+              Paging.entries.forEach { mode ->
+                DropdownMenuItem(
+                  text = { Text(mode.label) },
+                  leadingIcon = {
+                    if (mode == paging) Icon(Icons.Default.Check, null)
+                    else Spacer(Modifier.size(24.dp))
+                  },
+                  onClick = {
+                    showMenu = false
+                    paging = mode
+                    Prefs.paging = mode.name
+                  },
+                )
+              }
+              HorizontalDivider()
               DropdownMenuItem(
                 text = { Text("API key") },
                 leadingIcon = { Icon(Icons.Default.Lock, null) },
@@ -181,9 +200,18 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
       SearchField(model)
       SoldToggle(model)
       Box(Modifier.fillMaxSize()) {
-        Results(model, grid)
+        Results(model, grid, paging)
         if (model.loading) CircularProgressIndicator(Modifier.align(Alignment.Center))
       }
+    }
+  }
+
+  // Load-all: walk the remaining pages one at a time, with a gap — Reverb rate-limits. Each fetch
+  // flips `loading`, which re-runs this effect and schedules the next; an error stops the walk.
+  LaunchedEffect(paging, model.result?.currentPage, model.loading, model.errorMessage) {
+    if (paging == Paging.ALL && !model.loading && model.errorMessage == null && model.canLoadMore) {
+      delay(ALL_PAGES_DELAY_MS)
+      model.loadMore()
     }
   }
 
@@ -273,9 +301,23 @@ private fun SoldToggle(model: SearchViewModel) {
 }
 
 @Composable
-private fun Results(model: SearchViewModel, grid: Boolean) {
+private fun Results(model: SearchViewModel, grid: Boolean, paging: Paging) {
   val result = model.result
+  val state = rememberLazyGridState()
+
+  // Infinite scroll: fetch the next page once the tail of the list is in view. `loadMore` ignores
+  // the call while a fetch is in flight, so a fast scroll can't double-fetch.
+  if (paging == Paging.SCROLL) {
+    LaunchedEffect(state) {
+      snapshotFlow { state.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+        .collect { last ->
+          if (last != null && last >= state.layoutInfo.totalItemsCount - 3) model.loadMore()
+        }
+    }
+  }
+
   LazyVerticalGrid(
+    state = state,
     columns = if (grid) GridCells.Adaptive(150.dp) else GridCells.Fixed(1),
     contentPadding = PaddingValues(16.dp),
     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -322,6 +364,11 @@ private fun Results(model: SearchViewModel, grid: Boolean) {
             )
           }
         }
+      }
+      // The histogram describes everything loaded, so its axis doesn't jump as the title terms
+      // are typed.
+      if (model.loaded.isNotEmpty()) {
+        header { RecencyFilter(model.loaded, model.filters) { model.filters = it } }
       }
       model.stats?.let { stats ->
         header { StatsCard(stats, result.total, model.resultsAreSold) }
@@ -379,7 +426,23 @@ private fun Results(model: SearchViewModel, grid: Boolean) {
     if (model.canLoadMore) {
       header {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-          OutlinedButton(onClick = model::loadMore) { Text("Load more") }
+          when (paging) {
+            Paging.MORE -> OutlinedButton(onClick = model::loadMore) { Text("Load more") }
+            Paging.SCROLL ->
+              if (model.loading) {
+                Text(
+                  "Loading…",
+                  style = MaterialTheme.typography.bodySmall,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              }
+            Paging.ALL ->
+              Text(
+                "Loading page ${model.result?.currentPage?.plus(1)} of ${model.totalPages}…",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+          }
         }
       }
     }
@@ -502,6 +565,20 @@ private fun Thumbnail(url: String?, modifier: Modifier) {
     modifier = modifier.clip(RoundedCornerShape(8.dp)).background(Color.Gray.copy(alpha = 0.15f)),
   )
 }
+
+/** How more results are reached. Persisted by name in [Prefs.paging]. */
+enum class Paging(val label: String) {
+  MORE("Load more"),
+  SCROLL("Infinite scroll"),
+  ALL("Load all pages");
+
+  companion object {
+    fun stored(): Paging = entries.firstOrNull { it.name == Prefs.paging } ?: MORE
+  }
+}
+
+/** Gap between the automatic page fetches in [Paging.ALL] — Reverb rate-limits. */
+private const val ALL_PAGES_DELAY_MS = 500L
 
 private const val REVERB_HOME = "https://reverb.com"
 

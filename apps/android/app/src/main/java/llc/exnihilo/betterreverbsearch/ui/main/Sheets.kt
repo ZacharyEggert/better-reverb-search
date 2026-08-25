@@ -1,7 +1,6 @@
 package llc.exnihilo.betterreverbsearch.ui.main
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -115,33 +114,6 @@ fun FiltersSheet(
         draft = draft.copy(perPage = it ?: 24)
       }
 
-      Text("Listed date range", style = MaterialTheme.typography.titleSmall)
-      Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.weight(1f)) {
-          Dropdown(
-            "Newest",
-            // 0 is the "no bound" end of the ladder, so it reads as the none option.
-            cuts.newestMonths.takeIf { it > 0 },
-            ListingFilters.MONTH_OPTIONS.drop(1),
-            "now",
-            { monthLabel(it) },
-          ) {
-            setCuts(cuts.copy(newestMonths = it ?: 0))
-          }
-        }
-        Box(Modifier.weight(1f)) {
-          Dropdown(
-            "Oldest",
-            cuts.oldestMonths,
-            ListingFilters.MONTH_OPTIONS.drop(1),
-            "any",
-            { monthLabel(it) },
-          ) {
-            setCuts(cuts.copy(oldestMonths = it))
-          }
-        }
-      }
-
       Text("Blacklist / whitelist", style = MaterialTheme.typography.titleSmall)
       OutlinedTextField(
         value = cuts.blacklist,
@@ -232,8 +204,6 @@ private fun <T> Dropdown(
     }
   }
 }
-
-private fun monthLabel(months: Int) = "$months mo ago"
 
 @Composable
 private fun NumberField(label: String, value: Int?, modifier: Modifier, onChange: (Int?) -> Unit) {

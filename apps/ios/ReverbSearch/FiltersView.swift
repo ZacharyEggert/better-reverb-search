@@ -42,20 +42,6 @@ struct FiltersView: View {
                     number("Max", $query.yearMax)
                 }
 
-                Section("Listed date range") {
-                    Picker("Newest", selection: $filters.newestMonths) {
-                        ForEach(ListingFilters.monthOptions, id: \.self) { months in
-                            Text(months == 0 ? "now" : "\(months) mo ago").tag(months)
-                        }
-                    }
-                    Picker("Oldest", selection: $filters.oldestMonths) {
-                        Text("any").tag(Int?.none)
-                        ForEach(ListingFilters.monthOptions.dropFirst(), id: \.self) { months in
-                            Text("\(months) mo ago").tag(Int?.some(months))
-                        }
-                    }
-                }
-
                 Section {
                     terms("Blacklist — hide titles matching", "relic, mini, copy", $filters.blacklist)
                     terms("Whitelist — keep only titles matching", "strat(ocaster)?, tele", $filters.whitelist)

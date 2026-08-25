@@ -119,6 +119,16 @@ f = ListingFilters(blacklist: "(fender")
 assert(f.matches(recent, now: now))
 assert(ListingFilters.invalidTerms("(fender, relic") == ["(fender"])
 
+// The histogram: 3-month buckets, oldest listing setting the last index, and a
+// span that covers every bucket.
+let bucketed = Recency.buckets([recent, recent, old, undated], now: now)
+assert(bucketed.count == 8)  // old is ~22.6 mo => bucket 7
+assert(bucketed[0] == 2 && bucketed[7] == 1)  // undated listings aren't plotted
+assert(bucketed.reduce(0, +) == 3)
+assert(Recency.span(bucketCount: bucketed.count) == 24)
+// An empty result still has a span to drag over rather than a zero-width track.
+assert(Recency.buckets([], now: now) == [0] && Recency.span(bucketCount: 1) == 3)
+
 // Buckets are search-filter values alongside the seven grades.
 assert(Condition.buckets.map(\.rawValue) == ["used", "new", "b-stock"])
 assert(Condition.allCases.count == Condition.buckets.count + Condition.grades.count)

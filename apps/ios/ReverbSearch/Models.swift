@@ -248,21 +248,16 @@ struct SearchResult {
 
 /// Cuts applied to the listings already loaded, not to the query. Port of the
 /// web app's recency + blacklist/whitelist filters.
-///
-/// ponytail: a fixed month ladder instead of the web's histogram-derived span —
-/// same semantics, no chart to build. Swap in a computed span if the ladder
-/// ever misses the data.
 struct ListingFilters: Equatable {
-    /// Bounds in months ago. `oldestMonths == nil` means "no older bound".
+    /// Bounds in months ago, both multiples of `Recency.bucketMonths`. A nil
+    /// `oldestMonths` means "no older bound", so it keeps tracking the span as
+    /// older pages are appended rather than clipping them out.
     var newestMonths = 0
     var oldestMonths: Int?
     /// Comma-separated regexes. Titles matching any blacklist term are dropped;
     /// a non-empty whitelist drops titles matching none of its terms.
     var blacklist = ""
     var whitelist = ""
-
-    /// The steps offered for either bound.
-    static let monthOptions = [0, 3, 6, 12, 18, 24, 36]
 
     var isActive: Bool { self != ListingFilters() }
 
@@ -297,6 +292,25 @@ struct ListingFilters: Equatable {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
     }
+}
+
+/// The date histogram behind the range slider. Port of `recency-filter.tsx`.
+enum Recency {
+    /// Bucket width, in months. The slider steps in the same unit.
+    static let bucketMonths = 3
+
+    /// Counts per bucket, oldest listing setting the last index. The final
+    /// bucket is open-ended, so nothing falls off the end of the chart.
+    static func buckets(_ listings: [Listing], now: Date = .now) -> [Int] {
+        let indices = listings.compactMap { $0.monthsAgo(now: now) }
+            .map { Int($0) / bucketMonths }
+        var counts = [Int](repeating: 0, count: (indices.max() ?? 0) + 1)
+        for i in indices { counts[i] += 1 }
+        return counts
+    }
+
+    /// Full span covering every bucket — the "no filter" range.
+    static func span(bucketCount: Int) -> Int { max(bucketCount, 1) * bucketMonths }
 }
 
 extension NSRegularExpression {

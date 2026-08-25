@@ -28,6 +28,11 @@ object Prefs {
   var gridView: Boolean
     get() = prefs.getBoolean("gridView", false)
     set(value) = prefs.edit().putBoolean("gridView", value).apply()
+
+  /** How more results are reached; see `Paging`. Stored by name, unknown values fall back. */
+  var paging: String?
+    get() = prefs.getString("paging", null)
+    set(value) = prefs.edit().putString("paging", value).apply()
 }
 
 /**

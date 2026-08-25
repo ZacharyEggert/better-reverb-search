@@ -75,8 +75,11 @@ class SearchViewModel : ViewModel() {
     get() = PriceStats.of(listings)
 
   /** Reverb caps at 50 pages regardless of `total`. */
+  val totalPages: Int
+    get() = result?.let { min(it.totalPages, 50) } ?: 0
+
   val canLoadMore: Boolean
-    get() = result?.let { it.currentPage < min(it.totalPages, 50) } == true
+    get() = (result?.currentPage ?: 0) < totalPages
 
   fun search(page: Int = 1, appending: Boolean = false) {
     // Only a new search term spends quota — paging and re-running the same term under different

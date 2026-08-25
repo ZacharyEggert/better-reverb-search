@@ -3,6 +3,22 @@ import SwiftUI
 /// Nominative use of the Reverb mark — say plainly whose app this isn't.
 let affiliationDisclaimer = "Created by Ex Nihilo LLC. Not affiliated with Reverb.com LLC."
 
+/// How more results are reached. Persisted as its raw value.
+enum Paging: String, CaseIterable {
+    case more, scroll, all
+
+    var label: String {
+        switch self {
+        case .more: "Load more"
+        case .scroll: "Infinite scroll"
+        case .all: "Load all pages"
+        }
+    }
+}
+
+/// Gap between the automatic page fetches in `.all` — Reverb rate-limits.
+private let allPagesDelay = Duration.milliseconds(500)
+
 struct ContentView: View {
     @State private var model = SearchModel()
     @State private var showFilters = false
@@ -15,6 +31,8 @@ struct ContentView: View {
     @State private var dailyLimit = QueryQuota.dailyLimit
     // Display preference, not part of the search — survives Clear.
     @AppStorage("view") private var grid = false
+    // Display preference too — how more results are reached.
+    @AppStorage("paging") private var paging = Paging.more
 
     var body: some View {
         NavigationStack {
@@ -92,6 +110,10 @@ struct ContentView: View {
                         systemImage: "infinity"
                     ) { model.showPaywall = true }
                 }
+                Picker("Load more", selection: $paging) {
+                    ForEach(Paging.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.inline)
                 Button("API key", systemImage: "key") { showAPIKey = true }
                 Button("Promo code", systemImage: "ticket") { showPromoCode = true }
                 Button("Clear", systemImage: "xmark.circle", role: .destructive) { model.clear() }
@@ -136,6 +158,12 @@ struct ContentView: View {
                         }
                     }
 
+                    // The histogram describes everything loaded, so its axis
+                    // doesn't jump as the title terms are typed.
+                    if !model.loaded.isEmpty {
+                        RecencyFilterView(listings: model.loaded, filters: $model.filters)
+                    }
+
                     if let stats = model.stats {
                         StatsView(stats: stats, total: result.total, sold: model.resultsAreSold)
                     }
@@ -173,12 +201,36 @@ struct ContentView: View {
                 }
 
                 if model.canLoadMore {
-                    Button("Load more", action: model.loadMore)
-                        .buttonStyle(.bordered)
-                        .frame(maxWidth: .infinity)
+                    Group {
+                        switch paging {
+                        case .more:
+                            Button("Load more", action: model.loadMore).buttonStyle(.bordered)
+                        case .scroll:
+                            // Infinite scroll: the footer entering the viewport is the trigger.
+                            Text(model.loading ? "Loading…" : " ")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        case .all:
+                            Text("Loading page \(model.currentPage + 1) of \(model.totalPages)…")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .onAppear { if paging == .scroll { model.loadMore() } }
                 }
             }
             .padding()
+        }
+        // Load-all: walk the remaining pages one at a time, with a gap. Each fetch moves the id,
+        // which restarts this task and schedules the next; an error stops the walk.
+        .task(id: "\(paging.rawValue)-\(model.currentPage)-\(model.loading)") {
+            guard paging == .all, !model.loading, model.errorMessage == nil, model.canLoadMore
+            else { return }
+            try? await Task.sleep(for: allPagesDelay)
+            guard !Task.isCancelled else { return }
+            model.loadMore()
         }
         .overlay { if model.loading { ProgressView() } }
     }

@@ -41,10 +41,11 @@ final class SearchModel {
     var stats: PriceStats? { PriceStats(listings) }
 
     /// Reverb caps at 50 pages regardless of `total`.
-    var canLoadMore: Bool {
-        guard let result else { return false }
-        return result.currentPage < min(result.totalPages, 50)
-    }
+    var totalPages: Int { result.map { min($0.totalPages, 50) } ?? 0 }
+
+    var currentPage: Int { result?.currentPage ?? 0 }
+
+    var canLoadMore: Bool { currentPage < totalPages }
 
     func search(page: Int = 1, appending: Bool = false) {
         // Only a new search term spends quota — paging and re-running the same
@@ -91,8 +92,8 @@ final class SearchModel {
     }
 
     func loadMore() {
-        guard let result, canLoadMore, !loading else { return }
-        search(page: result.currentPage + 1, appending: true)
+        guard canLoadMore, !loading else { return }
+        search(page: currentPage + 1, appending: true)
     }
 
     /// Clears filters and results. The list/grid choice is a display preference,
