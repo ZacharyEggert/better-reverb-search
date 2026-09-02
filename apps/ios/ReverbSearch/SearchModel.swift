@@ -70,6 +70,22 @@ final class SearchModel {
     var canLoadAll: Bool { canLoadMore && loaded.count < Self.loadAllCap }
 
     func search(page: Int = 1, appending: Bool = false) {
+        // Whitespace isn't input: " " has to read as empty for the guard below,
+        // and a trailing space shouldn't look like a different search term.
+        query.query = query.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        query.make = query.make.trimmingCharacters(in: .whitespacesAndNewlines)
+        query.model = query.model.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // A search with no term and no filters is what Reverb answers with a
+        // 500. Blocked here rather than at each call site — the search field,
+        // Filters, the sold toggle and paging all land on this method.
+        guard !query.isEmpty else {
+            task?.cancel()
+            loading = false
+            errorMessage = SearchQuery.emptyHint
+            return
+        }
+
         // Only a new search term spends quota — paging and re-running the same
         // term under different filters are free, so neither `loadMore` nor a
         // filter tweak can strand you mid-list.
@@ -112,7 +128,7 @@ final class SearchModel {
                 return
             } catch {
                 guard !Task.isCancelled else { return }
-                self.errorMessage = error.localizedDescription
+                self.errorMessage = RevError.message(for: error)
                 self.loading = false
             }
         }

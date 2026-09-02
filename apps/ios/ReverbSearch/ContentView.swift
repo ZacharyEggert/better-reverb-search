@@ -184,7 +184,7 @@ struct ContentView: View {
                         systemImage: "guitars",
                         description: Text(
                             model.result == nil
-                                ? "Search active listings, or flip to sold comps to see what gear actually clears for."
+                                ? "Type what you're after — a make, a model, a year — then hit Search. Filters narrow it further, and the tag button flips to sold comps to see what gear actually clears for."
                                 : model.hiddenCount > 0
                                     ? "\(model.hiddenCount.formatted()) loaded listings are hidden by the date range or title terms."
                                     : "Try loosening a filter."))

@@ -68,7 +68,7 @@ struct SearchQuery: Equatable {
     func queryItems() throws -> [URLQueryItem] {
         for s in [query, make, model] { try checkSafeString(s) }
         if let lo = priceMin, let hi = priceMax, lo > hi {
-            throw RevError.validation("priceMin cannot exceed priceMax")
+            throw RevError.validation("Minimum price is above the maximum price.")
         }
 
         var items: [URLQueryItem] = []
@@ -93,11 +93,16 @@ struct SearchQuery: Equatable {
         return items
     }
 
-    /// True once anything beyond the paging defaults is set — used to decide
-    /// whether there is a search worth running at all.
+    /// True when there is nothing to search on. The sold/active toggle isn't
+    /// input — flipping it alone still leaves an empty search, which Reverb
+    /// answers with a 500 rather than a browse.
     var isEmpty: Bool {
-        self == SearchQuery(page: page, perPage: perPage)
+        self == SearchQuery(showOnlySold: showOnlySold, page: page, perPage: perPage)
     }
+
+    /// What to tell the user when `isEmpty` blocks the search.
+    static let emptyHint =
+        "Enter a search term first — or set a make, model, category, or price in Filters."
 }
 
 // MARK: - Wire types
@@ -366,7 +371,7 @@ func checkSafeString(_ s: String) throws {
         }
         if let bad {
             throw RevError.validation(
-                String(format: "input contains %@ character U+%04X", bad, cp))
+                "Search text contains an unsupported \(bad) character. Remove it and try again.")
         }
     }
 }

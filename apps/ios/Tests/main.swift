@@ -167,4 +167,18 @@ assert(!BypassCode.isActive && QueryQuota.dailyLimit == 5)
 // Without one it's always available.
 assert(QueryQuota.offerUpgrade)
 
+// An empty search is blocked before it reaches Reverb; the sold toggle alone
+// isn't input, but any real filter is.
+assert(SearchQuery().isEmpty)
+assert(SearchQuery(showOnlySold: true).isEmpty)
+assert(!SearchQuery(query: "strat").isEmpty)
+assert(!SearchQuery(productType: .amps).isEmpty)
+assert(!SearchQuery(priceMin: 100).isEmpty)
+
+// Server faults read as advice, never as a raw status code.
+let serverError = RevError.message(for: RevError.api(500, "Unknown Error"))
+assert(!serverError.contains("500") && serverError.contains("temporarily unavailable"))
+assert(RevError.message(for: URLError(.notConnectedToInternet)).contains("No internet"))
+assert(RevError.message(for: URLError(.timedOut)).contains("timed out"))
+
 print("ok")

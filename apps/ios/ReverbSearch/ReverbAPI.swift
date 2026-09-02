@@ -8,11 +8,36 @@ enum RevError: LocalizedError {
     case validation(String)
     case other(String)
 
+    /// What the user sees. Reverb's own status codes and body messages are
+    /// operator detail — a raw "API error 500" tells nobody what to do next.
     var errorDescription: String? {
         switch self {
-        case let .api(code, message): "API error \(code): \(message)"
-        case let .validation(message): "Validation error: \(message)"
+        case let .api(code, message):
+            switch code {
+            case 401, 403: "Reverb rejected the request. Check or remove your API key in the ••• menu."
+            case 404: "Reverb had nothing for that. Try a different search."
+            case 429: "Too many searches in a row. Wait a moment, then try again."
+            case 400, 422: "Reverb couldn't read that search. Try simpler terms or fewer filters."
+            case 500...599: "Reverb's search is temporarily unavailable. Try again in a moment."
+            default: message.isEmpty ? "The search couldn't be completed. Try again." : message
+            }
+        case let .validation(message): message
         case let .other(message): message
+        }
+    }
+
+    /// Every failure path the UI can hit, in words a user can act on.
+    static func message(for error: Error) -> String {
+        switch error {
+        case let error as RevError: error.localizedDescription
+        case let error as URLError:
+            switch error.code {
+            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+                "No internet connection. Reconnect and try again."
+            case .timedOut: "The search timed out. Try again."
+            default: "Couldn't reach Reverb. Check your connection and try again."
+            }
+        default: "The search couldn't be completed. Try again."
         }
     }
 }
@@ -39,14 +64,14 @@ enum ReverbAPI {
 
         guard (200..<300).contains(status) else {
             let message = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])
-                .flatMap { ($0?["message"] ?? $0?["Error"]) as? String } ?? "unknown error"
+                .flatMap { ($0?["message"] ?? $0?["Error"]) as? String } ?? ""
             throw RevError.api(status, message)
         }
 
         do {
             return try JSONDecoder().decode(Page.self, from: data).asResult
         } catch {
-            throw RevError.other("failed to parse response: \(error.localizedDescription)")
+            throw RevError.other("Reverb sent back something this app couldn't read. Try again.")
         }
     }
 
@@ -63,7 +88,7 @@ enum ReverbAPI {
             try await Task.sleep(for: .seconds(header.map { Swift.max(0, $0) } ?? delay))
             delay = Swift.min(delay * 2, 60)
         }
-        throw RevError.api(429, "rate limit exceeded after retries")
+        throw RevError.api(429, "")
     }
 
     private struct Page: Decodable {
