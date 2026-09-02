@@ -1,3 +1,3 @@
-# Xcode writes a shared scheme the first time xcodebuild runs; it only restates
-# what the project already implies.
-ReverbSearch.xcodeproj/xcshareddata/xcschemes/
+# The shared scheme is tracked now: it names the Offline and Live test plans, so
+# a fresh clone (and CI) can run `xcodebuild -testPlan`. Per-user state isn't.
+ReverbSearch.xcodeproj/xcuserdata/

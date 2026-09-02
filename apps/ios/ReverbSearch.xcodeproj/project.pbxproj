@@ -10,8 +10,27 @@
 		B62FB863301D2CE1007FB91E /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = B62FB862301D2CE1007FB91E /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		ABCDEF012345678900000022 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ABCDEF012345678900000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ABCDEF012345678900000007;
+			remoteInfo = ReverbSearch;
+		};
+		ABCDEF012345678900000023 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ABCDEF012345678900000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ABCDEF012345678900000007;
+			remoteInfo = ReverbSearch;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		ABCDEF012345678900000006 /* ReverbSearch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReverbSearch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABCDEF012345678900000010 /* ReverbSearchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReverbSearchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABCDEF012345678900000011 /* ReverbSearchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReverbSearchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B62FB862301D2CE1007FB91E /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -34,10 +53,30 @@
 			path = ReverbSearch;
 			sourceTree = "<group>";
 		};
+		ABCDEF012345678900000012 /* ReverbSearchTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ReverbSearchTests;
+			sourceTree = "<group>";
+		};
+		ABCDEF012345678900000013 /* ReverbSearchUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ReverbSearchUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		ABCDEF012345678900000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		ABCDEF012345678900000014 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		ABCDEF012345678900000015 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -49,6 +88,8 @@
 			isa = PBXGroup;
 			children = (
 				ABCDEF012345678900000002 /* ReverbSearch */,
+				ABCDEF012345678900000012 /* ReverbSearchTests */,
+				ABCDEF012345678900000013 /* ReverbSearchUITests */,
 				B62FB862301D2CE1007FB91E /* AppIcon.icon */,
 				ABCDEF012345678900000005 /* Products */,
 			);
@@ -58,6 +99,8 @@
 			isa = PBXGroup;
 			children = (
 				ABCDEF012345678900000006 /* ReverbSearch.app */,
+				ABCDEF012345678900000010 /* ReverbSearchTests.xctest */,
+				ABCDEF012345678900000011 /* ReverbSearchUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,6 +126,48 @@
 			productReference = ABCDEF012345678900000006 /* ReverbSearch.app */;
 			productType = "com.apple.product-type.application";
 		};
+		ABCDEF01234567890000001A /* ReverbSearchTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ABCDEF01234567890000001C /* Build configuration list for PBXNativeTarget "ReverbSearchTests" */;
+			buildPhases = (
+				ABCDEF012345678900000016 /* Sources */,
+				ABCDEF012345678900000014 /* Frameworks */,
+				ABCDEF012345678900000018 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ABCDEF012345678900000020 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				ABCDEF012345678900000012 /* ReverbSearchTests */,
+			);
+			name = ReverbSearchTests;
+			productName = ReverbSearchTests;
+			productReference = ABCDEF012345678900000010 /* ReverbSearchTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		ABCDEF01234567890000001B /* ReverbSearchUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ABCDEF01234567890000001D /* Build configuration list for PBXNativeTarget "ReverbSearchUITests" */;
+			buildPhases = (
+				ABCDEF012345678900000017 /* Sources */,
+				ABCDEF012345678900000015 /* Frameworks */,
+				ABCDEF012345678900000019 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ABCDEF012345678900000021 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				ABCDEF012345678900000013 /* ReverbSearchUITests */,
+			);
+			name = ReverbSearchUITests;
+			productName = ReverbSearchUITests;
+			productReference = ABCDEF012345678900000011 /* ReverbSearchUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -95,6 +180,14 @@
 				TargetAttributes = {
 					ABCDEF012345678900000007 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					ABCDEF01234567890000001A = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = ABCDEF012345678900000007;
+					};
+					ABCDEF01234567890000001B = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = ABCDEF012345678900000007;
 					};
 				};
 			};
@@ -113,6 +206,8 @@
 			projectRoot = "";
 			targets = (
 				ABCDEF012345678900000007 /* ReverbSearch */,
+				ABCDEF01234567890000001A /* ReverbSearchTests */,
+				ABCDEF01234567890000001B /* ReverbSearchUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -124,6 +219,16 @@
 				B62FB863301D2CE1007FB91E /* AppIcon.icon in Resources */,
 			);
 		};
+		ABCDEF012345678900000018 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		ABCDEF012345678900000019 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -132,7 +237,30 @@
 			files = (
 			);
 		};
+		ABCDEF012345678900000016 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		ABCDEF012345678900000017 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		ABCDEF012345678900000020 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ABCDEF012345678900000007 /* ReverbSearch */;
+			targetProxy = ABCDEF012345678900000022 /* PBXContainerItemProxy */;
+		};
+		ABCDEF012345678900000021 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ABCDEF012345678900000007 /* ReverbSearch */;
+			targetProxy = ABCDEF012345678900000023 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		ABCDEF01234567890000000C /* Debug configuration for PBXProject "ReverbSearch" */ = {
@@ -275,6 +403,68 @@
 			};
 			name = Release;
 		};
+		ABCDEF012345678900000024 /* Debug configuration for PBXNativeTarget "ReverbSearchTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.1.1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "llc.ex-nihilo.betterreverbsearch.ios.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ReverbSearch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ReverbSearch";
+			};
+			name = Debug;
+		};
+		ABCDEF012345678900000025 /* Release configuration for PBXNativeTarget "ReverbSearchTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.1.1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "llc.ex-nihilo.betterreverbsearch.ios.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ReverbSearch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ReverbSearch";
+			};
+			name = Release;
+		};
+		ABCDEF012345678900000026 /* Debug configuration for PBXNativeTarget "ReverbSearchUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.1.1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "llc.ex-nihilo.betterreverbsearch.ios.uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ReverbSearch;
+			};
+			name = Debug;
+		};
+		ABCDEF012345678900000027 /* Release configuration for PBXNativeTarget "ReverbSearchUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.1.1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "llc.ex-nihilo.betterreverbsearch.ios.uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ReverbSearch;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -291,6 +481,22 @@
 			buildConfigurations = (
 				ABCDEF01234567890000000C /* Debug configuration for PBXProject "ReverbSearch" */,
 				ABCDEF01234567890000000D /* Release configuration for PBXProject "ReverbSearch" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		ABCDEF01234567890000001C /* Build configuration list for PBXNativeTarget "ReverbSearchTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ABCDEF012345678900000024 /* Debug configuration for PBXNativeTarget "ReverbSearchTests" */,
+				ABCDEF012345678900000025 /* Release configuration for PBXNativeTarget "ReverbSearchTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		ABCDEF01234567890000001D /* Build configuration list for PBXNativeTarget "ReverbSearchUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ABCDEF012345678900000026 /* Debug configuration for PBXNativeTarget "ReverbSearchUITests" */,
+				ABCDEF012345678900000027 /* Release configuration for PBXNativeTarget "ReverbSearchUITests" */,
 			);
 			defaultConfigurationName = Release;
 		};

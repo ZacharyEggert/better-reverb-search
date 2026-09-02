@@ -36,7 +36,9 @@ final class SearchModel {
     /// so Ask/Off never render against active listings.
     private(set) var resultsAreSold = false
 
-    private var task: Task<Void, Never>?
+    /// ponytail: internal, not private, so tests can await the in-flight search
+    /// instead of polling `loading`. Nothing outside the model touches it.
+    private(set) var task: Task<Void, Never>?
 
     /// The search term quota was last spent on. Refining filters, flipping to
     /// sold, or paging re-runs the same term — only a new term costs a query.

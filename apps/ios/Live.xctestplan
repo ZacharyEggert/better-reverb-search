@@ -1,0 +1,33 @@
+{
+  "configurations": [
+    {
+      "id": "00000000-0000-0000-0000-0000000000A2",
+      "name": "Live",
+      "options": {
+        "environmentVariableEntries": [
+          {
+            "key": "RUN_LIVE_TESTS",
+            "value": "1"
+          }
+        ]
+      }
+    }
+  ],
+  "defaultOptions": {
+    "targetForVariableExpansion": {
+      "containerPath": "container:ReverbSearch.xcodeproj",
+      "identifier": "ABCDEF012345678900000007",
+      "name": "ReverbSearch"
+    }
+  },
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:ReverbSearch.xcodeproj",
+        "identifier": "ABCDEF01234567890000001A",
+        "name": "ReverbSearchTests"
+      }
+    }
+  ],
+  "version": 1
+}

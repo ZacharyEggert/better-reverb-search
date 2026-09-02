@@ -1,0 +1,57 @@
+name: iOS Tests
+
+# Offline plan on every change to the app; the live plan is manual, because it
+# talks to api.reverb.com for real and Reverb's rate limiter shouldn't decide
+# whether a PR is green. Run the live plan before submitting to App Review.
+on:
+  push:
+    paths:
+      - "apps/ios/**"
+      - ".github/workflows/ios-tests.yml"
+  pull_request:
+    paths:
+      - "apps/ios/**"
+      - ".github/workflows/ios-tests.yml"
+  workflow_dispatch:
+    inputs:
+      live:
+        description: "Also run the Live plan against api.reverb.com"
+        type: boolean
+        default: false
+
+jobs:
+  test:
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: apps/ios
+    steps:
+      - uses: actions/checkout@v4
+
+      # The image's simulator lineup moves with Xcode; take whatever iPhone it has.
+      - name: Pick a simulator
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j \
+            | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['name'] for v in d.values() for x in v if x['name'].startswith('iPhone')))")
+          echo "Using $DEVICE"
+          echo "DESTINATION=platform=iOS Simulator,name=$DEVICE" >> "$GITHUB_ENV"
+
+      - name: Offline tests
+        run: |
+          xcodebuild -project ReverbSearch.xcodeproj -scheme ReverbSearch \
+            -testPlan Offline -destination "$DESTINATION" \
+            CODE_SIGNING_ALLOWED=NO test
+
+      - name: Live tests
+        if: inputs.live
+        run: |
+          xcodebuild -project ReverbSearch.xcodeproj -scheme ReverbSearch \
+            -testPlan Live -destination "$DESTINATION" \
+            CODE_SIGNING_ALLOWED=NO test
+
+      - name: Upload results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcresult
+          path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult

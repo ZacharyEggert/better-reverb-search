@@ -1,0 +1,35 @@
+{
+  "configurations" : [
+    {
+      "id" : "00000000-0000-0000-0000-0000000000A1",
+      "name" : "Offline",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:ReverbSearch.xcodeproj",
+      "identifier" : "ABCDEF012345678900000007",
+      "name" : "ReverbSearch"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:ReverbSearch.xcodeproj",
+        "identifier" : "ABCDEF01234567890000001A",
+        "name" : "ReverbSearchTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:ReverbSearch.xcodeproj",
+        "identifier" : "ABCDEF01234567890000001B",
+        "name" : "ReverbSearchUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
