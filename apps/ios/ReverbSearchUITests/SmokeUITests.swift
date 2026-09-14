@@ -19,11 +19,24 @@ final class SmokeUITests: XCTestCase {
     /// UI tests run in their own process, and this is the string a user reads.
     private let emptyHint = "Enter a search term first"
 
+    /// A CI simulator is slow enough that the first tap can land before the
+    /// field will take focus, and `typeText` then fails outright rather than
+    /// waiting. Tap until focus sticks.
+    private func tapUntilFocused(_ field: XCUIElement) {
+        let focused = NSPredicate(format: "hasKeyboardFocus == true")
+        for _ in 0..<3 {
+            field.tap()
+            let check = XCTNSPredicateExpectation(predicate: focused, object: field)
+            if XCTWaiter().wait(for: [check], timeout: 3) == .completed { return }
+        }
+        XCTFail("The search field never took keyboard focus")
+    }
+
     func testSubmittingAnEmptySearchExplainsWhatIsMissing() {
         let app = launch()
         let field = app.searchFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10))
-        field.tap()
+        tapUntilFocused(field)
         // A space, so the Return key is live on an otherwise empty field — and
         // whitespace has to read as empty anyway.
         field.typeText(" \n")

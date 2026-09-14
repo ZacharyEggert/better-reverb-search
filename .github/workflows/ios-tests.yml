@@ -40,14 +40,16 @@ jobs:
         run: |
           xcodebuild -project ReverbSearch.xcodeproj -scheme ReverbSearch \
             -testPlan Offline -destination "$DESTINATION" \
-            CODE_SIGNING_ALLOWED=NO test
+            CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" test
 
       - name: Live tests
         if: inputs.live
         run: |
           xcodebuild -project ReverbSearch.xcodeproj -scheme ReverbSearch \
             -testPlan Live -destination "$DESTINATION" \
-            CODE_SIGNING_ALLOWED=NO test
+            CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" test
 
       - name: Upload results
         if: failure()

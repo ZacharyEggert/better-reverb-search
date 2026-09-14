@@ -23,12 +23,15 @@ enum APIKeyStore {
         return String(data: data, encoding: .utf8)
     }
 
-    static func save(_ key: String) {
+    /// Returns the keychain's own status so a failure is visible rather than
+    /// silently reading back as "no key".
+    @discardableResult
+    static func save(_ key: String) -> OSStatus {
         remove()
         var query = baseQuery
         query[kSecValueData as String] = Data(key.utf8)
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-        SecItemAdd(query as CFDictionary, nil)
+        return SecItemAdd(query as CFDictionary, nil)
     }
 
     static func remove() {
