@@ -181,4 +181,4 @@ private fun Benefit(icon: Int, text: String) {
 }
 
 private const val TERMS = "https://play.google.com/about/play-terms/"
-private const val PRIVACY = "https://ex-nihilo.llc/privacy"
+private const val PRIVACY = "https://www.ex-nihilo.llc/privacy"

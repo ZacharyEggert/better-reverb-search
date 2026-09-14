@@ -10,7 +10,7 @@ struct PaywallView: View {
     // Apple's standard EULA. Swap for your own if you ever write one.
     private let terms = URL(
         string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
-    private let privacy = URL(string: "https://ex-nihilo.llc/privacy")!
+    private let privacy = URL(string: "https://www.ex-nihilo.llc/privacy")!
 
     /// Falls back to the configured price only if the App Store is unreachable —
     /// the storefront's own `displayPrice` is the one that's correct abroad.
