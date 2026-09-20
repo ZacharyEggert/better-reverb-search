@@ -16,16 +16,14 @@ struct PaywallView: View {
     /// the storefront's own `displayPrice` is the one that's correct abroad.
     private var price: String { store.product?.displayPrice ?? "$49.99" }
 
-    private var pitch: String {
-        guard let intro = store.introOffer else {
-            return "\(QueryQuota.dailyLimit) searches a day are free. Go unlimited for \(price) per month."
-        }
-        return "\(QueryQuota.dailyLimit) searches a day are free. Go unlimited for \(intro.displayPrice) your first \(period(intro.period)), then \(price) per month."
-    }
+    /// Apple 3.1.2(c): the billed amount is the biggest pricing element; the
+    /// intro price sits below it, smaller.
+    private var billedAmount: String { "\(price) per month" }
 
-    private var callToAction: String {
-        guard let intro = store.introOffer else { return "Subscribe — \(price)/month" }
-        return "Start for \(intro.displayPrice)"
+    private var subtext: String {
+        let free = "\(QueryQuota.dailyLimit) searches a day are free."
+        guard let intro = store.introOffer else { return free }
+        return "\(free) First \(period(intro.period)) \(intro.displayPrice)."
     }
 
     /// App Review rejects an offer that doesn't spell out what happens after it.
@@ -60,8 +58,10 @@ struct PaywallView: View {
                     VStack(spacing: 8) {
                         Text("Unlimited Queries")
                             .font(.title.bold())
-                        Text(pitch)
-                            .font(.subheadline)
+                        Text(billedAmount)
+                            .font(.title2.bold())
+                        Text(subtext)
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
@@ -83,7 +83,7 @@ struct PaywallView: View {
                     Button {
                         run { if try await store.purchase() { dismiss() } }
                     } label: {
-                        Text(callToAction)
+                        Text("Subscribe")
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
                     }
