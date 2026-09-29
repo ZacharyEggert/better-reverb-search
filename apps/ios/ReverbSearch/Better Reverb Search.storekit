@@ -14,7 +14,21 @@
 
   ],
   "products" : [
-
+    {
+      "displayPrice" : "999.99",
+      "familyShareable" : false,
+      "internalID" : "21563790",
+      "localizations" : [
+        {
+          "description" : "Unlimited Reverb searches, forever. One-time purchase.",
+          "displayName" : "Unlimited Queries (Lifetime)",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "llc.exnihilo.betterreverbsearch.unlimited.lifetime",
+      "referenceName" : "Unlimited Queries (Lifetime)",
+      "type" : "NonConsumable"
+    }
   ],
   "settings" : {
     "_applicationInternalID" : "6796825743",

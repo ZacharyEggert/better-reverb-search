@@ -14,7 +14,8 @@ struct PaywallView: View {
 
     /// Falls back to the configured price only if the App Store is unreachable —
     /// the storefront's own `displayPrice` is the one that's correct abroad.
-    private var price: String { store.product?.displayPrice ?? "$49.99" }
+    private var price: String { store.monthly?.displayPrice ?? "$49.99" }
+    private var lifetimePrice: String { store.lifetime?.displayPrice ?? "$999.99" }
 
     /// Apple 3.1.2(c): the billed amount is the biggest pricing element; the
     /// intro price sits below it, smaller.
@@ -79,7 +80,7 @@ struct PaywallView: View {
                     }
 
                     Button {
-                        run { if try await store.purchase() { dismiss() } }
+                        buy(store.monthly)
                     } label: {
                         Text("Subscribe")
                             .fontWeight(.semibold)
@@ -87,18 +88,28 @@ struct PaywallView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
-                    .disabled(working || store.product == nil)
+                    .disabled(working || store.monthly == nil)
+
+                    Button {
+                        buy(store.lifetime)
+                    } label: {
+                        Text("Unlock forever — \(lifetimePrice) once")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .disabled(working || store.lifetime == nil)
 
                     Button("Restore purchases") {
                         run {
                             try await store.restore()
-                            if store.isSubscribed { dismiss() }
-                            else { errorMessage = "No active subscription found on this account." }
+                            if store.isUnlocked { dismiss() }
+                            else { errorMessage = "No active purchase found on this account." }
                         }
                     }
                     .disabled(working)
 
-                    Text(disclosure)
+                    Text("\(disclosure) Lifetime is a one-time purchase and never renews.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -129,6 +140,11 @@ struct PaywallView: View {
         Label(text, systemImage: symbol)
             .font(.subheadline)
             .labelStyle(.titleAndIcon)
+    }
+
+    private func buy(_ product: Product?) {
+        guard let product else { return }
+        run { if try await store.purchase(product) { dismiss() } }
     }
 
     private func run(_ work: @escaping () async throws -> Void) {
