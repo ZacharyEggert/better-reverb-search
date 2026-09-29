@@ -151,4 +151,23 @@ struct StatsTests {
         let s = try #require(stats([123_45]))
         #expect(s.format(s.median) == "$123")
     }
+
+    @Test("Sold price records replace the REST ask; newest sale wins")
+    func soldPriceRecords() throws {
+        var listings = [
+            makeListing(#"{"id": 1, "title": "A", "state": {"slug": "sold"}, "price": {"amount_cents": 1799500, "currency": "USD", "display": "$17,995"}}"#),
+            makeListing(#"{"id": 2, "title": "B", "state": {"slug": "sold"}, "price": {"amount_cents": 100000, "currency": "USD", "display": "$1,000"}}"#),
+        ]
+        let found = try JSONDecoder().decode([String: SoldPrices.Records?].self, from: Data(#"""
+            {"l1": {"priceRecords": [
+                {"createdAt": {"seconds": 1}, "amountProduct": {"amountCents": 1749900, "currency": "USD", "display": "$17,499"}},
+                {"createdAt": {"seconds": 2}, "amountProduct": {"amountCents": 1125000, "currency": "USD", "display": "$11,250"}}]},
+             "l2": {"priceRecords": []}}
+            """#.utf8))
+        SoldPrices.merge(found, into: &listings)
+        #expect(listings[0].price?.amountCents == 1125000)
+        #expect(listings[0].originalPrice?.amountCents == 1799500)
+        #expect(listings[0].discountPercent == 37)
+        #expect(listings[1].price?.amountCents == 100000)
+    }
 }

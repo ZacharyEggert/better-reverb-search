@@ -104,6 +104,15 @@ struct LiveTests {
             #expect(result.total == 0)
         }
 
+        @Test("Sold comps carry the real sale price, not the last ask")
+        func soldPriceRecords() async throws {
+            // 36627697 was asking $17,995 and sold on an offer for $15,500.
+            let result = try await search(
+                SearchQuery(query: "Adam Jones Murphy", make: "Gibson", showOnlySold: true, perPage: 50))
+            let listing = try #require(result.listings.first { $0.id == 36627697 })
+            #expect(listing.price?.amountCents == 1_550_000)
+        }
+
         @Test("A junk API key doesn't break search — Reverb ignores it on public listings")
         func badAPIKeyStillSearches() async throws {
             try await paceLiveRequest()
