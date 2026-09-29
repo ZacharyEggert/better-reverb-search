@@ -11,7 +11,7 @@ struct QuotaTests {
 
     @Test("Counts down from the daily limit and clamps at zero")
     func countdown() {
-        let sandbox = DefaultsSandbox("quota", "bypassCode")
+        let sandbox = DefaultsSandbox("quota")
         defer { sandbox.restore() }
         #expect(QueryQuota.remaining == QueryQuota.dailyLimit)
         for _ in 0..<QueryQuota.dailyLimit { QueryQuota.consume() }
@@ -24,45 +24,11 @@ struct QuotaTests {
 
     @Test("A stale day starts over")
     func dailyReset() {
-        let sandbox = DefaultsSandbox("quota", "bypassCode")
+        let sandbox = DefaultsSandbox("quota")
         defer { sandbox.restore() }
         UserDefaults.standard.set(["day": today - 1, "count": 99], forKey: "quota")
         #expect(QueryQuota.used == 0)
         #expect(QueryQuota.remaining == QueryQuota.dailyLimit)
-    }
-
-    @Test("A stored code alone doesn't raise the limit — only a confirmed one")
-    func codeMustBeVerified() {
-        let sandbox = DefaultsSandbox("quota", "bypassCode")
-        defer { sandbox.restore() }
-        #expect(!BypassCode.hasCode && QueryQuota.dailyLimit == 5)
-
-        UserDefaults.standard.set("code", forKey: "bypassCode")
-        // Stored but unconfirmed: an unreachable server leaves the default limit.
-        #expect(BypassCode.hasCode)
-        #expect(!BypassCode.isActive)
-        #expect(QueryQuota.dailyLimit == 5)
-
-        BypassCode.verified = true
-        #expect(QueryQuota.dailyLimit == BypassCode.raisedLimit)
-
-        BypassCode.remove()
-        #expect(!BypassCode.hasCode && !BypassCode.isActive && QueryQuota.dailyLimit == 5)
-    }
-
-    @Test("A code buys a quiet app: no upgrade pitch until half the quota is spent")
-    func upgradePitch() {
-        let sandbox = DefaultsSandbox("quota", "bypassCode")
-        defer { sandbox.restore() }
-        // Without a code the pitch is always available.
-        #expect(QueryQuota.offerUpgrade)
-
-        UserDefaults.standard.set("code", forKey: "bypassCode")
-        BypassCode.verified = true
-        #expect(!QueryQuota.offerUpgrade)
-        UserDefaults.standard.set(
-            ["day": today, "count": BypassCode.raisedLimit / 2], forKey: "quota")
-        #expect(QueryQuota.offerUpgrade)
     }
 }
 

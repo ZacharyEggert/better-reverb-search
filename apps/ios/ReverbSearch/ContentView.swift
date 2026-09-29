@@ -23,12 +23,8 @@ struct ContentView: View {
     @State private var model = SearchModel()
     @State private var showFilters = false
     @State private var showAPIKey = false
-    @State private var showPromoCode = false
     @State private var toast: String?
     @State private var store = Store.shared
-    // Mirrors QueryQuota.dailyLimit so a promo code taking effect re-renders the
-    // count — the quota itself is a static with nothing to observe.
-    @State private var dailyLimit = QueryQuota.dailyLimit
     // Display preference, not part of the search — survives Clear.
     @AppStorage("view") private var grid = false
     // Display preference too — how more results are reached.
@@ -62,19 +58,7 @@ struct ContentView: View {
                     FiltersView(query: $model.query, filters: $model.filters) { model.search() }
                 }
                 .sheet(isPresented: $showAPIKey) { APIKeyView() }
-                // Code entered or cleared — the limit may have moved.
-                .sheet(isPresented: $showPromoCode) { dailyLimit = QueryQuota.dailyLimit } content: {
-                    PromoCodeView()
-                }
                 .sheet(isPresented: $model.showPaywall) { PaywallView() }
-                // Re-check the stored promo code once per launch.
-                .task {
-                    if await BypassCode.refresh() == .unreachable {
-                        toast =
-                            "Promo service unreachable — daily limit stays at \(QueryQuota.dailyLimit)."
-                    }
-                    dailyLimit = QueryQuota.dailyLimit
-                }
                 .overlay(alignment: .bottom) {
                     if let toast {
                         ToastView(text: toast)
@@ -113,9 +97,9 @@ struct ContentView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
-                if !store.isSubscribed, QueryQuota.offerUpgrade {
+                if !store.isSubscribed {
                     Button(
-                        "\(QueryQuota.remaining) of \(dailyLimit) searches left today",
+                        "\(QueryQuota.remaining) of \(QueryQuota.dailyLimit) searches left today",
                         systemImage: "infinity"
                     ) { model.showPaywall = true }
                 }
@@ -124,7 +108,6 @@ struct ContentView: View {
                 }
                 .pickerStyle(.inline)
                 Button("API key", systemImage: "key") { showAPIKey = true }
-                Button("Promo code", systemImage: "ticket") { showPromoCode = true }
                 Button("Clear", systemImage: "xmark.circle", role: .destructive) { model.clear() }
             } label: {
                 Label("More", systemImage: "ellipsis.circle")

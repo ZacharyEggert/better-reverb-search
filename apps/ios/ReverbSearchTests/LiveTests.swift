@@ -130,12 +130,11 @@ struct LiveTests {
     @MainActor
     @Suite("Search model")
     struct SearchModelTests {
-        /// A promo-code limit rather than the free five, so a full run can't be cut
+        /// A lifted limit rather than the free five, so a full run can't be cut
         /// short by its own quota — and the tester's real counters go back after.
         private func sandbox() -> DefaultsSandbox {
-            let sandbox = DefaultsSandbox("quota", "bypassCode")
-            UserDefaults.standard.set("test", forKey: "bypassCode")
-            BypassCode.verified = true
+            let sandbox = DefaultsSandbox("quota")
+            QueryQuota.dailyLimit = 1000
             return sandbox
         }
 

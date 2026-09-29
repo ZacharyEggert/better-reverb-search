@@ -66,12 +66,10 @@ struct PaywallView: View {
                             .multilineTextAlignment(.center)
                     }
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        benefit("infinity", "Unlimited searches, every day")
-                        benefit("tag.fill", "Sold comps — what gear actually clears for")
-                        benefit("chart.bar.fill", "Low / median / high on every result set")
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    // Apple 3.1.2(c): list only what the subscription adds. Sold comps
+                    // and stats are free, so they don't belong here.
+                    benefit("infinity", "Unlimited searches, every day")
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     if let errorMessage {
                         Text(errorMessage)

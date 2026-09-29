@@ -98,8 +98,6 @@ fun PaywallSheet(onDismiss: () -> Unit) {
 
       Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Benefit(R.drawable.ic_infinity, "Unlimited searches, every day")
-        Benefit(R.drawable.ic_tag, "Sold comps — what gear actually clears for")
-        Benefit(R.drawable.ic_chart, "Low / median / high on every result set")
       }
 
       errorMessage?.let {

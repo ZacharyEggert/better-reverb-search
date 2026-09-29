@@ -9,7 +9,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -25,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,9 +31,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import llc.exnihilo.betterreverbsearch.data.ApiKeyStore
-import llc.exnihilo.betterreverbsearch.data.BypassCode
 import llc.exnihilo.betterreverbsearch.data.Condition
 import llc.exnihilo.betterreverbsearch.data.ListingFilters
 import llc.exnihilo.betterreverbsearch.data.ProductType
@@ -216,71 +212,6 @@ private fun NumberField(label: String, value: Int?, modifier: Modifier, onChange
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
     modifier = modifier,
   )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PromoCodeSheet(onDismiss: () -> Unit) {
-  var draft by remember { mutableStateOf("") }
-  var applied by remember { mutableStateOf(BypassCode.hasCode) }
-  var working by remember { mutableStateOf(false) }
-  var message by remember { mutableStateOf<String?>(null) }
-  val scope = rememberCoroutineScope()
-  val code = draft.trim()
-
-  ModalBottomSheet(onDismissRequest = onDismiss) {
-    Column(
-      Modifier.padding(horizontal = 16.dp).padding(bottom = 32.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-      Text("Promo code", style = MaterialTheme.typography.titleLarge)
-      OutlinedTextField(
-        value = draft,
-        onValueChange = { draft = it },
-        label = { Text(if (applied) "Applied — enter to replace" else "Promo code") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-      )
-      if (applied) {
-        TextButton(
-          onClick = {
-            BypassCode.remove()
-            applied = false
-          }
-        ) {
-          Text("Remove code", color = MaterialTheme.colorScheme.error)
-        }
-      }
-      message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-      Text(
-        if (applied) "${BypassCode.RAISED_LIMIT} searches a day while the code stays valid."
-        else "Have a code? It raises your daily search limit.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-      Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-        if (working) CircularProgressIndicator(Modifier.padding(end = 12.dp))
-        TextButton(onClick = onDismiss) { Text("Close") }
-        Button(
-          enabled = !working && code.isNotEmpty(),
-          onClick = {
-            working = true
-            message = null
-            scope.launch {
-              try {
-                if (BypassCode.submit(code)) onDismiss() else message = "That code isn't valid."
-              } catch (e: Exception) {
-                message = e.message
-              }
-              working = false
-            }
-          },
-        ) {
-          Text("Apply")
-        }
-      }
-    }
-  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
