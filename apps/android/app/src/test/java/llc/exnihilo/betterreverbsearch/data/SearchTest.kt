@@ -141,6 +141,31 @@ class SearchTest {
     assertEquals(3, Recency.span(1))
   }
 
+  @Test
+  fun soldPriceRecordsReplaceAskAndNewestWins() {
+    val ask = Money(amountCents = 1799500, currency = "USD", display = "${'$'}17,995")
+    val listings =
+      listOf(
+        Listing(id = 1, price = ask, state = Named(slug = "sold")),
+        Listing(id = 2, price = Money(amountCents = 100000), state = Named(slug = "sold")),
+      )
+    val found =
+      json.decodeFromString(
+        SoldPrices.recordsMap,
+        """
+        {"l1": {"priceRecords": [
+          {"createdAt": {"seconds": 1}, "amountProduct": {"amountCents": 1749900, "currency": "USD", "display": "${'$'}17,499"}},
+          {"createdAt": {"seconds": 2}, "amountProduct": {"amountCents": 1125000, "currency": "USD", "display": "${'$'}11,250"}}]},
+         "l2": {"priceRecords": []}}
+        """,
+      )
+    val merged = SoldPrices.merge(found, listings)
+    assertEquals(1125000, merged[0].price?.amountCents)
+    assertEquals(ask, merged[0].originalPrice)
+    assertEquals(37, merged[0].discountPercent)
+    assertEquals(100000, merged[1].price?.amountCents)
+  }
+
   private companion object {
     /** 2023-11-14T22:13:20Z. */
     const val NOW = 1_700_000_000_000L

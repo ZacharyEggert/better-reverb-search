@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildUrl, resolveMethod } from "./executor.js";
 import {
+  applySoldPrices,
   discountPercent,
   listingUrl,
   priceStats,
@@ -145,5 +146,42 @@ describe("executor url building", () => {
 
   it("rejects an unknown method", () => {
     expect(() => resolveMethod("listings", "frobnicate")).toThrow(/unknown method/);
+  });
+});
+
+describe("applySoldPrices", () => {
+  it("swaps the REST ask for the newest sale record and keeps the ask", async () => {
+    const sold = (id: number, cents: number) =>
+      ({ id, state: { slug: "sold" }, price: money(cents), original_price: null }) as unknown as Listing;
+    const a = sold(1, 1799500);
+    const b = sold(2, 100000);
+    vi.stubGlobal("fetch", async () =>
+      Response.json({
+        data: {
+          l1: {
+            priceRecords: [
+              { createdAt: { seconds: 1 }, amountProduct: { amountCents: 1749900, display: "$17,499" } },
+              { createdAt: { seconds: 2 }, amountProduct: { amountCents: 1125000, display: "$11,250" } },
+            ],
+          },
+          l2: { priceRecords: [] },
+        },
+      }),
+    );
+    await applySoldPrices([a, b]);
+    vi.unstubAllGlobals();
+
+    expect(a.price.amount_cents).toBe(1125000);
+    expect(a.original_price?.amount_cents).toBe(1799500);
+    expect(discountPercent(a)).toBe(37);
+    expect(b.price.amount_cents).toBe(100000); // no record — REST ask stands
+  });
+
+  it("leaves prices alone when the endpoint fails", async () => {
+    const a = { id: 1, state: { slug: "sold" }, price: money(500) } as unknown as Listing;
+    vi.stubGlobal("fetch", async () => new Response("nope", { status: 500 }));
+    await applySoldPrices([a]);
+    vi.unstubAllGlobals();
+    expect(a.price.amount_cents).toBe(500);
   });
 });

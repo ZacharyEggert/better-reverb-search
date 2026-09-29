@@ -68,11 +68,14 @@ enum ReverbAPI {
             throw RevError.api(status, message)
         }
 
+        var result: SearchResult
         do {
-            return try JSONDecoder().decode(Page.self, from: data).asResult
+            result = try JSONDecoder().decode(Page.self, from: data).asResult
         } catch {
             throw RevError.other("Reverb sent back something this app couldn't read. Try again.")
         }
+        await SoldPrices.apply(to: &result.listings)
+        return result
     }
 
     /// Exponential backoff on 429, honouring `retry-after`. 5 attempts, 60s cap —
@@ -113,6 +116,63 @@ enum ReverbAPI {
                 humanizedParams: humanizedParams ?? "",
                 listings: (listings ?? []).compactMap(\.value))
         }
+    }
+}
+
+/// Port of `applySoldPrices` in `search.ts`. The REST API reports a sold
+/// listing's last *ask* as `price` — an accepted offer's amount never appears
+/// there. The real sale lives in Reverb's undocumented GraphQL
+/// `priceRecordsSearch`; one aliased query per 50 listings, newest record wins
+/// (a listing can sell twice). Best effort: any failure keeps the REST ask.
+enum SoldPrices {
+    static let url = URL(string: "https://gql.reverb.com/graphql")!
+
+    struct Record: Decodable {
+        struct Timestamp: Decodable { var seconds: Int? }
+        /// camelCase on this wire, unlike REST's `Money`.
+        struct Amount: Decodable { var amountCents: Int?; var currency: String?; var display: String? }
+        var createdAt: Timestamp?
+        var amountProduct: Amount?
+    }
+    struct Records: Decodable { var priceRecords: [Record]? }
+    private struct Response: Decodable { var data: [String: Records?]? }
+
+    static func apply(to listings: inout [Listing]) async {
+        let ids = listings.filter { $0.state?.slug == "sold" }.map(\.id)
+        guard !ids.isEmpty else { return }
+        let chunks = stride(from: 0, to: ids.count, by: 50).map { Array(ids[$0..<min($0 + 50, ids.count)]) }
+        let found = await withTaskGroup(of: [String: Records?].self) { group in
+            for chunk in chunks { group.addTask { (try? await fetch(chunk)) ?? [:] } }
+            return await group.reduce(into: [:]) { $0.merge($1) { a, _ in a } }
+        }
+        merge(found, into: &listings)
+    }
+
+    static func merge(_ found: [String: Records?], into listings: inout [Listing]) {
+        for i in listings.indices {
+            let newest = (found["l\(listings[i].id)"] ?? nil)?.priceRecords?
+                .max { ($0.createdAt?.seconds ?? 0) < ($1.createdAt?.seconds ?? 0) }?.amountProduct
+            guard let cents = newest?.amountCents, cents > 0, let display = newest?.display else { continue }
+            if listings[i].originalPrice == nil { listings[i].originalPrice = listings[i].price }
+            listings[i].price = Money(
+                amount: String(format: "%.2f", Double(cents) / 100), amountCents: cents,
+                currency: newest?.currency ?? listings[i].price?.currency, display: display)
+        }
+    }
+
+    private static func fetch(_ ids: [Int]) async throws -> [String: Records?] {
+        let fields = ids.map {
+            "l\($0): priceRecordsSearch(input: {listingId: \"\($0)\"}) { priceRecords { createdAt { seconds } amountProduct { amountCents currency display } } }"
+        }.joined(separator: " ")
+        var request = URLRequest(url: url, timeoutInterval: 10)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // The gateway rejects anonymous operations with GW-001.
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "operationName": "SoldPrices", "query": "query SoldPrices { \(fields) }",
+        ])
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(Response.self, from: data).data ?? [:]
     }
 }
 

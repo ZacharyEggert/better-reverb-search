@@ -173,14 +173,95 @@ export async function searchListings(
   const first = pages[0];
   if (!first) throw RevError.other(new Error("search returned no pages"));
 
+  const listings = pages.flatMap((p) => p.listings ?? []);
+  await applySoldPrices(listings, options.signal);
+
   return {
     total: first.total ?? 0,
     currentPage: first.current_page ?? 1,
     perPage: first.per_page ?? 0,
     totalPages: first.total_pages ?? 0,
     humanizedParams: first.humanized_params ?? "",
-    listings: pages.flatMap((p) => p.listings ?? []),
+    listings,
   };
+}
+
+export const PRICE_RECORDS_URL = "https://gql.reverb.com/graphql";
+
+interface PriceRecord {
+  createdAt?: { seconds?: number | string };
+  amountProduct?: { amountCents?: number; currency?: string; display?: string };
+}
+
+/**
+ * The REST API reports a sold listing's last *ask* as `price` — an accepted
+ * offer's amount never appears there. The real sale lives in Reverb's
+ * undocumented GraphQL `priceRecordsSearch` (what reverb.com's sold page
+ * reads). One aliased query per 50 listings; a listing can sell more than once
+ * (e.g. after a return), and the newest record is the one reverb.com shows.
+ *
+ * Mutates in place. Best effort: any failure leaves the REST ask standing.
+ * The replaced ask moves to `original_price` when that's empty, so
+ * `discountPercent` measures the real cut.
+ */
+export async function applySoldPrices(
+  listings: Listing[],
+  signal?: AbortSignal,
+): Promise<void> {
+  const sold = listings.filter((l) => l.state?.slug === "sold");
+  const chunks: Listing[][] = [];
+  for (let i = 0; i < sold.length; i += 50) chunks.push(sold.slice(i, i + 50));
+
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      try {
+        const records = await fetchPriceRecords(
+          chunk.map((l) => l.id),
+          signal,
+        );
+        for (const l of chunk) {
+          const newest = records[`l${l.id}`]?.priceRecords
+            ?.slice()
+            .sort((a, b) => Number(b.createdAt?.seconds ?? 0) - Number(a.createdAt?.seconds ?? 0))[0]
+            ?.amountProduct;
+          const cents = newest?.amountCents;
+          if (!cents || !newest.display) continue;
+          l.original_price ??= l.price;
+          l.price = {
+            amount: (cents / 100).toFixed(2),
+            amount_cents: cents,
+            currency: newest.currency ?? l.price?.currency ?? "USD",
+            symbol: l.price?.symbol ?? "$",
+            display: newest.display,
+          };
+        }
+      } catch {
+        // ponytail: undocumented endpoint — silent fallback to the REST ask.
+      }
+    }),
+  );
+}
+
+async function fetchPriceRecords(
+  ids: number[],
+  signal?: AbortSignal,
+): Promise<Record<string, { priceRecords?: PriceRecord[] } | null>> {
+  const fields = ids
+    .map(
+      (id) =>
+        `l${id}: priceRecordsSearch(input: {listingId: "${id}"}) { priceRecords { createdAt { seconds } amountProduct { amountCents currency display } } }`,
+    )
+    .join(" ");
+  const timeout = AbortSignal.timeout(10_000);
+  const res = await fetch(PRICE_RECORDS_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    // The gateway rejects anonymous operations with GW-001.
+    body: JSON.stringify({ operationName: "SoldPrices", query: `query SoldPrices { ${fields} }` }),
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+  });
+  if (!res.ok) throw new Error(`price records ${res.status}`);
+  return ((await res.json()) as { data?: Record<string, { priceRecords?: PriceRecord[] } | null> }).data ?? {};
 }
 
 interface RawPage {
