@@ -61,8 +61,8 @@ struct SearchModelGuardTests {
     func paywallInsteadOfError() {
         let sandbox = DefaultsSandbox("quota")
         defer { sandbox.restore() }
-        // A subscriber has no quota to run out of, so there is nothing to assert.
-        guard !Store.shared.isSubscribed else { return }
+        // An unlocked user has no quota to run out of, so there is nothing to assert.
+        guard !Store.shared.isUnlocked else { return }
         for _ in 0..<QueryQuota.dailyLimit { QueryQuota.consume() }
         let model = SearchModel()
         model.query.query = "stratocaster"

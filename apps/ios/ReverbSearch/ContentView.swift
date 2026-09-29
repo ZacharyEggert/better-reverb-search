@@ -97,7 +97,7 @@ struct ContentView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
-                if !store.isSubscribed {
+                if !store.isUnlocked {
                     Button(
                         "\(QueryQuota.remaining) of \(QueryQuota.dailyLimit) searches left today",
                         systemImage: "infinity"

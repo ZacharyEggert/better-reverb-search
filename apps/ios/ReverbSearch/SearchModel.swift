@@ -96,7 +96,7 @@ final class SearchModel {
         // charged term's re-run budget alone.
         if !appending && !term.isEmpty {
             let isRerun = term == chargedTerm && rerunsLeft > 0
-            if !isRerun && !Store.shared.isSubscribed {
+            if !isRerun && !Store.shared.isUnlocked {
                 guard QueryQuota.remaining > 0 else {
                     showPaywall = true
                     return
