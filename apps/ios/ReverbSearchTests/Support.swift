@@ -28,22 +28,22 @@ let referenceNow = Date(timeIntervalSince1970: 1_700_000_000)  // 2023-11-14
 
 /// UserDefaults is the real app's, since tests run in the app host. Anything a
 /// test writes gets put back, so a run doesn't spend the tester's own quota or
-/// drop their promo code. `BypassCode.verified` is process state, restored too.
+/// keep a lifted limit. `QueryQuota.dailyLimit` is process state, restored too.
 struct DefaultsSandbox {
-    /// Suites run in parallel, but the quota, the promo flag, and the keychain
+    /// Suites run in parallel, but the quota, its limit, and the keychain
     /// are one per process — a sandboxed test holds this for its whole body.
     private static let lock = NSLock()
 
     private let saved: [String: Any?]
-    private let wasVerified: Bool
+    private let limit: Int
 
     init(_ keys: String...) {
         Self.lock.lock()
-        wasVerified = BypassCode.verified
+        limit = QueryQuota.dailyLimit
         saved = Dictionary(
             uniqueKeysWithValues: keys.map { ($0, UserDefaults.standard.object(forKey: $0)) })
         for key in keys { UserDefaults.standard.removeObject(forKey: key) }
-        BypassCode.verified = false
+        QueryQuota.dailyLimit = 5
     }
 
     func restore() {
@@ -51,7 +51,7 @@ struct DefaultsSandbox {
             if let value { UserDefaults.standard.set(value, forKey: key) }
             else { UserDefaults.standard.removeObject(forKey: key) }
         }
-        BypassCode.verified = wasVerified
+        QueryQuota.dailyLimit = limit
         Self.lock.unlock()
     }
 }

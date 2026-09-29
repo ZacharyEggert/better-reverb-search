@@ -104,7 +104,8 @@ Rate limited to **5 requests per 5 seconds per key**; over that returns `429`
 with `retry-after`. The window is in-process, so it's per server instance.
 
 `POST /api/bypass-limit` takes `{ "key": "..." }` and answers
-`{ "valid": bool }` — the promo-code check the mobile apps make. Compared
+`{ "valid": bool }` — the promo-code check older mobile builds make (removed
+from the apps: App Store 3.1.1 bans non-IAP unlocks; delete once those age out). Compared
 against `LIMIT_BYPASS_KEY` in constant time; unset env never validates. Rate
 limited to 5/minute per IP so the key can't be brute forced.
 
@@ -124,9 +125,8 @@ Load-all caps at 500 listings (50 per page) and then hands back a Load more
 button — a broad search would otherwise walk all 50 pages.
 
 Searches are quota'd: 5/day free, unlimited on a monthly subscription
-(StoreKit / Play Billing `unlimited_monthly`). A promo code verified against
-`POST /api/bypass-limit` raises the daily limit to 1000; only a
-server-confirmed code raises it, so an unreachable service stays at 5.
+(StoreKit / Play Billing `unlimited_monthly`). Free access goes out as store
+offer codes, never an in-app unlock.
 
 Releases go out through `.github/workflows/{ios,android}-release.yml` —
 manual `workflow_dispatch`, signed, uploaded to TestFlight / the chosen Play

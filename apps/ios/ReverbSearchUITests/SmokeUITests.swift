@@ -89,7 +89,7 @@ final class SmokeUITests: XCTestCase {
 
         app.buttons["More"].tap()
         XCTAssertTrue(app.buttons["API key"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Promo code"].exists)
+        XCTAssertFalse(app.buttons["Promo code"].exists)
         XCTAssertTrue(app.buttons["Clear"].exists)
     }
 }

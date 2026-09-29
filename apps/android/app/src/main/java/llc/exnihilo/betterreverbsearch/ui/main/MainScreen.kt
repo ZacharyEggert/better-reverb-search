@@ -76,7 +76,6 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import llc.exnihilo.betterreverbsearch.R
 import llc.exnihilo.betterreverbsearch.data.Billing
-import llc.exnihilo.betterreverbsearch.data.BypassCode
 import llc.exnihilo.betterreverbsearch.data.Listing
 import llc.exnihilo.betterreverbsearch.data.PriceStats
 import llc.exnihilo.betterreverbsearch.data.Prefs
@@ -89,14 +88,10 @@ import llc.exnihilo.betterreverbsearch.theme.BrandOrange
 fun MainScreen(model: SearchViewModel = viewModel()) {
   var showFilters by remember { mutableStateOf(false) }
   var showApiKey by remember { mutableStateOf(false) }
-  var showPromoCode by remember { mutableStateOf(false) }
   var showMenu by remember { mutableStateOf(false) }
   var toast by remember { mutableStateOf<String?>(null) }
   var grid by remember { mutableStateOf(Prefs.gridView) }
   var paging by remember { mutableStateOf(Paging.stored()) }
-  // Mirrors QueryQuota.dailyLimit so a promo code taking effect re-renders the count — the quota
-  // itself is an object with nothing to observe.
-  var dailyLimit by remember { mutableStateOf(QueryQuota.dailyLimit) }
   val subscribed by Billing.isSubscribed.collectAsStateWithLifecycle()
 
   // The model raises one-shot notices; the toast is where they land.
@@ -109,14 +104,6 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
 
   // Load-all owns the page size while it's the chosen mode.
   LaunchedEffect(paging) { model.setLoadAllPages(paging == Paging.ALL) }
-
-  // Re-check the stored promo code once per launch.
-  LaunchedEffect(Unit) {
-    if (BypassCode.refresh() == BypassCode.Check.UNREACHABLE) {
-      toast = "Promo service unreachable — daily limit stays at ${QueryQuota.dailyLimit}."
-    }
-    dailyLimit = QueryQuota.dailyLimit
-  }
 
   Scaffold(
     topBar = {
@@ -148,9 +135,9 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
               Icon(Icons.Default.MoreVert, contentDescription = "More")
             }
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-              if (!subscribed && QueryQuota.offerUpgrade) {
+              if (!subscribed) {
                 DropdownMenuItem(
-                  text = { Text("${QueryQuota.remaining} of $dailyLimit searches left today") },
+                  text = { Text("${QueryQuota.remaining} of ${QueryQuota.dailyLimit} searches left today") },
                   leadingIcon = { Icon(painterResource(R.drawable.ic_infinity), null) },
                   onClick = {
                     showMenu = false
@@ -179,14 +166,6 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
                 onClick = {
                   showMenu = false
                   showApiKey = true
-                },
-              )
-              DropdownMenuItem(
-                text = { Text("Promo code") },
-                leadingIcon = { Icon(painterResource(R.drawable.ic_tag), null) },
-                onClick = {
-                  showMenu = false
-                  showPromoCode = true
                 },
               )
               DropdownMenuItem(
@@ -255,15 +234,6 @@ fun MainScreen(model: SearchViewModel = viewModel()) {
     )
   }
   if (showApiKey) ApiKeySheet(onDismiss = { showApiKey = false })
-  if (showPromoCode) {
-    // Code entered or cleared — the limit may have moved.
-    PromoCodeSheet(
-      onDismiss = {
-        showPromoCode = false
-        dailyLimit = QueryQuota.dailyLimit
-      }
-    )
-  }
   if (model.showPaywall) PaywallSheet(onDismiss = { model.showPaywall = false })
 }
 

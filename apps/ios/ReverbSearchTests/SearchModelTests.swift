@@ -48,7 +48,7 @@ struct SearchModelGuardTests {
 
     @Test("A blocked search spends no quota")
     func blockedSearchIsFree() {
-        let sandbox = DefaultsSandbox("quota", "bypassCode")
+        let sandbox = DefaultsSandbox("quota")
         defer { sandbox.restore() }
         let before = QueryQuota.remaining
         let model = SearchModel()
@@ -59,7 +59,7 @@ struct SearchModelGuardTests {
 
     @Test("Out of quota, a search raises the paywall instead of erroring")
     func paywallInsteadOfError() {
-        let sandbox = DefaultsSandbox("quota", "bypassCode")
+        let sandbox = DefaultsSandbox("quota")
         defer { sandbox.restore() }
         // A subscriber has no quota to run out of, so there is nothing to assert.
         guard !Store.shared.isSubscribed else { return }
@@ -74,7 +74,7 @@ struct SearchModelGuardTests {
 
     @Test("Filters alone are a real search — no term required")
     func filtersAloneSearch() {
-        let sandbox = DefaultsSandbox("quota", "bypassCode")
+        let sandbox = DefaultsSandbox("quota")
         defer { sandbox.restore() }
         let model = SearchModel()
         model.query.make = "Fender"
